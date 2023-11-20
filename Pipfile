@@ -9,6 +9,7 @@ pymongo = {extras = ["srv"], version = "*"}
 psycopg2 = "*"
 pillow = "*"
 djangorestframework = "*"
+pygments = "*"
 
 [dev-packages]
 
