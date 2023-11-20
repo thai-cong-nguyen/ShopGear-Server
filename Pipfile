@@ -8,6 +8,7 @@ django = "*"
 pymongo = {extras = ["srv"], version = "*"}
 psycopg2 = "*"
 pillow = "*"
+djangorestframework = "*"
 
 [dev-packages]
 
