@@ -10,6 +10,7 @@ psycopg2 = "*"
 pillow = "*"
 djangorestframework = "*"
 pygments = "*"
+python-dotenv = "*"
 
 [dev-packages]
 
