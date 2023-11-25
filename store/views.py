@@ -16,6 +16,7 @@ def index(request):
     return render(request, 'index.html', context)
 
 # USER REQUEST
+# hello
 
 
 @api_view(['GET'])
