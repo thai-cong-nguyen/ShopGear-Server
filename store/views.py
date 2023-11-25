@@ -12,6 +12,7 @@ def index(request):
     context = {
         'obj': obj
     }
+    #hehehe
     return render(request, 'index.html', context)
 
 # USER REQUEST
@@ -29,6 +30,7 @@ def user_list(request):
         serializer = UserSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
+            #hihiihi
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         else:
             return Response(status=status.HTTP_400_BAD_REQUEST)
@@ -79,7 +81,7 @@ def category_detail(request, id):
         category = Category.objects.get(pk=id)
     except Category.DoesNotExist:
         return Response(status=status.HTTP_404_NOT_FOUND)
-
+#djjd
     if request.method == 'GET':
         serializer = CategorySerializer(category)
         return Response(serializer.data, status=status.HTTP_200_OK)
