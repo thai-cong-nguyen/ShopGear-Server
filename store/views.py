@@ -29,7 +29,6 @@ def user(request):
 
 @api_view(['GET', 'POST'])
 def user_list(request):
-    # request == GET
     if request.method == 'GET':
         users = User.objects.all()
         serializer = UserSerializer(users, many=True)
