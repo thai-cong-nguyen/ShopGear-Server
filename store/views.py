@@ -15,9 +15,12 @@ def index(request):
     return render(request, 'index.html', context)
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 # USER REQUEST
 # hello
 
+=======
+>>>>>>> parent of 0eba203 (CRUD products, categories, users)
 
 @api_view(['GET'])
 def user(request):
@@ -81,4 +84,7 @@ def user_detail(request, id):
     elif request.method == 'DELETE':
         user.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+<<<<<<< HEAD
+>>>>>>> parent of 0eba203 (CRUD products, categories, users)
+=======
 >>>>>>> parent of 0eba203 (CRUD products, categories, users)
