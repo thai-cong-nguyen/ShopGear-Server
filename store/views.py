@@ -20,7 +20,26 @@ def index(request):
 
 @api_view(['GET'])
 def user(request):
-    return Response(status=status.HTTP_100_CONTINUE)
+    if request == 'GET':
+        return Response(status=status.HTTP_100_CONTINUE)
+
+
+@api_view(['GET', 'POST'])
+def user_list(request):
+    # request == GET
+    if request.method == 'GET':
+        users = User.objects.all()
+        serializer = UserSerializer(users, many=True)
+        return Response(serializer.data)
+
+    if request.method == 'POST':
+        serializer = UserSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            # hihiihi
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        else:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(['GET', 'PUT', 'DELETE'])
