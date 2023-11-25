@@ -1,10 +1,9 @@
 from django.shortcuts import render
-from . models import Category, User, Product, Order, OrderItem, Cart, CartItem, Transaction, Post
-
-from .serializers import UserSerializer, CategorySerializer, ProductSerializer, OrderSerializer, OrderItemSerializer, CartSerializer, CartItemSerializer, TransactionSerializer, PostSerializer
+from .models import Category, User
+from .serializers import UserSerializer
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from rest_framework import status, mixins, generics
+from rest_framework import status
 
 
 def index(request):
@@ -15,6 +14,7 @@ def index(request):
     # hehehe
     return render(request, 'index.html', context)
 
+<<<<<<< HEAD
 # USER REQUEST
 # hello
 
@@ -24,6 +24,8 @@ def user(request):
     if request == 'GET':
         return Response(status=status.HTTP_100_CONTINUE)
 
+=======
+>>>>>>> parent of 0eba203 (CRUD products, categories, users)
 
 @api_view(['GET', 'POST'])
 def user_list(request):
@@ -43,6 +45,7 @@ def user_list(request):
             return Response(status=status.HTTP_400_BAD_REQUEST)
 
 
+<<<<<<< HEAD
 
 
 
@@ -59,3 +62,24 @@ class ProductList(generics.ListCreateAPIView):
 class ProductDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
+=======
+@api_view(['GET', 'PUT', 'DELETE'])
+def user_detail(request, id):
+    try:
+        user = User.objects.get(pk=id)
+    except User.DoesNotExist:
+        return Response(status=status.HTTP_404_NOT_FOUND)
+
+    if request.method == 'GET':
+        serializer = UserSerializer(user)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    elif request.method == 'PUT':
+        serializer = UserSerializer(user, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    elif request.method == 'DELETE':
+        user.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+>>>>>>> parent of 0eba203 (CRUD products, categories, users)
