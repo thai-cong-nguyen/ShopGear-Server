@@ -100,7 +100,7 @@ def category_detail(request, id):
 
 
 class ProductList(generics.ListCreateAPIView):
-    queryset = Product.objects.all()
+    queryset = Product.objects.all().order_by('name')
     serializer_class = ProductSerializer
 
 
