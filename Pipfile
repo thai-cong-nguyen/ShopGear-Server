@@ -11,6 +11,7 @@ pillow = "*"
 djangorestframework = "*"
 pygments = "*"
 python-dotenv = "*"
+djangorestframework-camel-case = "*"
 
 [dev-packages]
 

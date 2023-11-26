@@ -4,17 +4,21 @@ from ..models import Category, User, Product, Order, OrderItem, Cart, CartItem, 
 from ..serializers import UserSerializer, CategorySerializer, ProductSerializer, OrderSerializer, OrderItemSerializer, CartSerializer, CartItemSerializer, TransactionSerializer, PostSerializer
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from rest_framework import status, mixins, generics
-
-
-def index(request):
-    obj = Category.objects.all()
-    context = {
-        'obj': obj
-    }
-    return render(request, 'index.html', context)
+from rest_framework import status, mixins, generics, viewsets
+from rest_framework.reverse import reverse
+from rest_framework.views import APIView
 
 # USER REQUEST
+
+
+class ApiRoot(APIView):
+    def get(self, request, format=None):
+        return Response({
+            'products': reverse('product-list', request=request, format=format),
+            'product_detail': reverse('product-detail', request=request, args=[5], format=format),
+            'users': reverse('user-list', request=request, format=format)
+            # Add more endpoints as needed
+        })
 
 
 @api_view(['GET', 'POST'])
