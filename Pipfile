@@ -11,6 +11,9 @@ pillow = "*"
 djangorestframework = "*"
 pygments = "*"
 python-dotenv = "*"
+djangorestframework-simplejwt = "*"
+setuptools = "*"
+timedelta = "*"
 
 [dev-packages]
 
