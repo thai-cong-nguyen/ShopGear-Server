@@ -15,6 +15,7 @@ djangorestframework-simplejwt = "*"
 setuptools = "*"
 timedelta = "*"
 djangorestframework-camel-case = "*"
+supabase = "*"
 
 [dev-packages]
 

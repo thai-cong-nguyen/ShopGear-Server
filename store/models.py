@@ -1,7 +1,8 @@
 from django.db import models
 import datetime
 # Categories of Products
-
+from django.contrib.postgres.fields import ArrayField
+from django.utils.translation import gettext_lazy as _
 
 class Category(models.Model):
     name = models.CharField(max_length=50)
@@ -29,6 +30,21 @@ class User(models.Model):
     def __str__(self):
         return f'{self.first_name} {self.last_name}'
     
+class Field(models.Model):
+    category_id = models.ForeignKey(Category, on_delete=models.CASCADE, null=False, default=None, related_name='fields')
+    name = models.CharField(max_length=255, blank=True)
+    field_type = models.CharField(max_length=255)
+    def __str__(self):
+        return self.name
+
+class FieldOption(models.Model):
+    field_id = models.ForeignKey(Field, on_delete=models.CASCADE, null=False, default=None, related_name='options')
+    name = models.CharField(max_length=255, blank=True)
+    value = models.CharField(max_length=255, blank=True)
+
+    def __str__(self):
+        return self.name
+    
 
 class Product(models.Model):
     user_id = models.ForeignKey(
@@ -39,13 +55,30 @@ class Product(models.Model):
     description = models.CharField(
         max_length=250, default='', blank=True, null=True)
     price = models.DecimalField(default=0, decimal_places=0, max_digits=9)
-    image = models.ImageField(upload_to='uploads/product')
     # True: còn hàng; False: đã bán
     is_available = models.BooleanField(default=False)
-
     def __str__(self):
         return self.name
+    
+class FieldValue(models.Model):
+    field_id = models.ForeignKey(Field, on_delete=models.CASCADE)
+    value = models.CharField(max_length=255)
+    product_id = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='field_values')
 
+class Attachment(models.Model):
+    class AttachmentType(models.TextChoices):
+        PHOTO = "Photo", _("Photo")
+        VIDEO = "Video", _("Video")
+
+    file = models.ImageField('Attachment', upload_to='attachments/')
+    file_type = models.CharField('File type', choices=AttachmentType.choices, max_length=10)
+
+    publication = models.ForeignKey(Product, on_delete=models.CASCADE, verbose_name='Model that uses the image field', related_name='attachments', null=False, default=None)
+    def __str__(self):
+        return self.publication.name
+    class Meta:
+        verbose_name = 'Attachment'
+        verbose_name_plural = 'Attachments'
 
 class Order(models.Model):
     user_id = models.ForeignKey(
@@ -109,20 +142,29 @@ class Transaction(models.Model):
 
 class Post(models.Model):
     user_id = models.ForeignKey(
-        User, on_delete=models.CASCADE, null=False, default=None)
+        User, on_delete=models.CASCADE, null=False, default=None, related_name='posts')
     product_id = models.ForeignKey(
-        Product, on_delete=models.CASCADE, null=False, default=None)
-    image_urls = models.ImageField(upload_to='uploads/post')
+        Product, on_delete=models.CASCADE, null=False, default=None, related_name='products')
     description = models.TextField()
     price = models.IntegerField(default=0)
 
     HO_CHI_MINH = 'HCM'
     DA_NANG = 'DN'
     HA_NOI = 'HN'
-    ZONE_CHOICES = [
+    ZONE_CHOICES = [    
         (HO_CHI_MINH, 'Hồ Chí Minh'),
         (DA_NANG, 'Đà Nẵng'),
         (HA_NOI, 'Hà Nội'),
     ]
     zone = models.CharField(choices=ZONE_CHOICES,
                             max_length=4, default=HO_CHI_MINH)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def save(self, *args, **kw):
+        self.updated_at = datetime.time()
+        super().save(*args, **kw)
+
+    def __str__(self):
+        return self.user_id.first_name + ' ' + self.user_id.last_name + ' - '  + self.product_id.name
+
