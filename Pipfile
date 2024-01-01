@@ -16,9 +16,9 @@ setuptools = "*"
 timedelta = "*"
 djangorestframework-camel-case = "*"
 supabase = "*"
-gunicore = "*"
+gunicorn = "*"
 
 [dev-packages]
 
 [requires]
-python_version = "3.12"
+python_version = "*"

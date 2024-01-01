@@ -30,7 +30,7 @@ SECRET_KEY = 'django-insecure-e#%ja3($+ss)-ehokyf6v34!z$kz$a$*ivj0lzv)53$yzb=nq6
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['api-shopgear.onrender.com']
+ALLOWED_HOSTS = ['api-shopgear.onrender.com', '127.0.0.1']
 
 
 # Application definition
