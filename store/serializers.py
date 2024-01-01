@@ -10,7 +10,8 @@ from django.db.models import Q
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['id', 'username', 'first_name', 'last_name', 'is_admin']
+        fields = ['id', 'username', 'first_name',
+                  'last_name', 'is_admin', 'products']
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -24,6 +25,9 @@ class ProductSerializer(serializers.ModelSerializer):
         model = Product
         fields = ['id', 'user_id', 'category_id', 'name',
                   'description', 'price', 'is_available', 'image']
+        depth = 1
+
+        # read_only_fields = ['id']
 
 
 class OrderSerializer(serializers.ModelSerializer):

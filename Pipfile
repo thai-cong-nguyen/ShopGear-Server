@@ -14,6 +14,7 @@ python-dotenv = "*"
 djangorestframework-simplejwt = "*"
 setuptools = "*"
 timedelta = "*"
+djangorestframework-camel-case = "*"
 
 [dev-packages]
 

@@ -20,7 +20,7 @@ class User(models.Model):
     first_name = models.CharField(max_length=50)
     last_name = models.CharField(max_length=50)
     phone = models.CharField(max_length=10)
-    email = models.CharField(max_length=100)
+    email = models.EmailField(max_length=100)
     password = models.CharField(max_length=100)
     address = models.CharField(
         max_length=250, default='', blank=True, null=True)
@@ -32,7 +32,7 @@ class User(models.Model):
 
 class Product(models.Model):
     user_id = models.ForeignKey(
-        User, on_delete=models.CASCADE, null=False, default=None)
+        User, on_delete=models.CASCADE, null=False, default=None, related_name='products')
     category_id = models.ForeignKey(
         Category, on_delete=models.CASCADE, null=False, default=None)
     name = models.CharField(max_length=100)
