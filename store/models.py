@@ -1,0 +1,170 @@
+from django.db import models
+import datetime
+# Categories of Products
+from django.contrib.postgres.fields import ArrayField
+from django.utils.translation import gettext_lazy as _
+
+class Category(models.Model):
+    name = models.CharField(max_length=50)
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        verbose_name_plural = 'categories'
+
+# Customers
+
+
+class User(models.Model):
+    username = models.CharField(max_length=50)
+    first_name = models.CharField(max_length=50)
+    last_name = models.CharField(max_length=50)
+    phone = models.CharField(max_length=10)
+    email = models.EmailField(max_length=100)
+    password = models.CharField(max_length=100)
+    address = models.CharField(
+        max_length=250, default='', blank=True, null=True)
+    is_admin = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f'{self.first_name} {self.last_name}'
+    
+class Field(models.Model):
+    category_id = models.ForeignKey(Category, on_delete=models.CASCADE, null=False, default=None, related_name='fields')
+    name = models.CharField(max_length=255, blank=True)
+    field_type = models.CharField(max_length=255)
+    def __str__(self):
+        return self.name
+
+class FieldOption(models.Model):
+    field_id = models.ForeignKey(Field, on_delete=models.CASCADE, null=False, default=None, related_name='options')
+    name = models.CharField(max_length=255, blank=True)
+    value = models.CharField(max_length=255, blank=True)
+
+    def __str__(self):
+        return self.name
+    
+
+class Product(models.Model):
+    user_id = models.ForeignKey(
+        User, on_delete=models.CASCADE, null=False, default=None, related_name='products')
+    category_id = models.ForeignKey(
+        Category, on_delete=models.CASCADE, null=False, default=None)
+    name = models.CharField(max_length=100)
+    description = models.CharField(
+        max_length=250, default='', blank=True, null=True)
+    price = models.DecimalField(default=0, decimal_places=0, max_digits=9)
+    # True: còn hàng; False: đã bán
+    is_available = models.BooleanField(default=False)
+    def __str__(self):
+        return self.name
+    
+class FieldValue(models.Model):
+    field_id = models.ForeignKey(Field, on_delete=models.CASCADE)
+    value = models.CharField(max_length=255)
+    product_id = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='field_values')
+
+class Attachment(models.Model):
+    class AttachmentType(models.TextChoices):
+        PHOTO = "Photo", _("Photo")
+        VIDEO = "Video", _("Video")
+
+    file = models.ImageField('Attachment', upload_to='attachments/')
+    file_type = models.CharField('File type', choices=AttachmentType.choices, max_length=10)
+
+    publication = models.ForeignKey(Product, on_delete=models.CASCADE, verbose_name='Model that uses the image field', related_name='attachments', null=False, default=None)
+    def __str__(self):
+        return self.publication.name
+    class Meta:
+        verbose_name = 'Attachment'
+        verbose_name_plural = 'Attachments'
+
+class Order(models.Model):
+    user_id = models.ForeignKey(
+        User, on_delete=models.CASCADE, null=False, default=None)
+    total_price = models.IntegerField(default=0)
+    address = models.CharField(max_length=100, default='', blank=True)
+    phone = models.CharField(max_length=20, default='', blank=True)
+    date = models.DateField(default=datetime.datetime.today)
+
+    def __str__(self):
+        return self.product
+
+
+class OrderItem(models.Model):
+    order_id = models.ForeignKey(
+        Order, on_delete=models.CASCADE, null=False, default=None)
+    product_id = models.ForeignKey(
+        Product, on_delete=models.CASCADE, null=False, default=None)
+    quantity = models.PositiveIntegerField(default=1)
+
+    def __str__(self):
+        return self.product_id
+
+
+class Cart(models.Model):
+    user_id = models.ForeignKey(
+        User, on_delete=models.CASCADE, null=False, default=None)
+
+    def __str__(self):
+        return 'Cart of' + self.user_id
+
+
+class CartItem(models.Model):
+    cart_id = models.ForeignKey(
+        Cart, on_delete=models.CASCADE, null=False, default=None)
+    product_id = models.ForeignKey(Product, on_delete=models.CASCADE)
+    quantity = models.PositiveBigIntegerField(default=1)
+
+    def __str__(self):
+        return self.product_id
+
+
+class Transaction(models.Model):
+    buyer_id = models.ForeignKey(
+        User, related_name='buyer_transactions', on_delete=models.CASCADE, null=False, default=None)
+    seller_id = models.ForeignKey(
+        User, related_name='seller_transactions', on_delete=models.CASCADE, null=False, default=None)
+    total_price = models.IntegerField(default=0)
+
+    class Status(models.IntegerChoices):
+        PENDING = 1, 'PENDING'
+        UNPAID = 2, ' UNPAID'
+        PAID = 3, 'PAID'
+        IN_TRANSIT = 4, 'IN_TRANSIT'
+        DELIVERED = 5, 'DELIVERED'
+        CANCELLED = 0, 'CANCELLED'
+
+    status = models.IntegerField(
+        choices=Status.choices, default=Status.PENDING)
+
+
+class Post(models.Model):
+    user_id = models.ForeignKey(
+        User, on_delete=models.CASCADE, null=False, default=None, related_name='posts')
+    product_id = models.ForeignKey(
+        Product, on_delete=models.CASCADE, null=False, default=None, related_name='products')
+    description = models.TextField()
+    price = models.IntegerField(default=0)
+
+    HO_CHI_MINH = 'HCM'
+    DA_NANG = 'DN'
+    HA_NOI = 'HN'
+    ZONE_CHOICES = [    
+        (HO_CHI_MINH, 'Hồ Chí Minh'),
+        (DA_NANG, 'Đà Nẵng'),
+        (HA_NOI, 'Hà Nội'),
+    ]
+    zone = models.CharField(choices=ZONE_CHOICES,
+                            max_length=4, default=HO_CHI_MINH)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def save(self, *args, **kw):
+        self.updated_at = datetime.time()
+        super().save(*args, **kw)
+
+    def __str__(self):
+        return self.user_id.first_name + ' ' + self.user_id.last_name + ' - '  + self.product_id.name
+

@@ -5,8 +5,20 @@ name = "pypi"
 
 [packages]
 django = "*"
+pymongo = {extras = ["srv"], version = "*"}
+psycopg2 = "*"
+pillow = "*"
+djangorestframework = "*"
+pygments = "*"
+python-dotenv = "*"
+djangorestframework-simplejwt = "*"
+setuptools = "*"
+timedelta = "*"
+djangorestframework-camel-case = "*"
+supabase = "*"
+gunicorn = "*"
 
 [dev-packages]
 
 [requires]
-python_version = "3.12"
+python_version = "*"
