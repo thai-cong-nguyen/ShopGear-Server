@@ -1,5 +1,5 @@
 from django.urls import path, include
-from .views import crud, auth
+from .views import crud, auth, payment
 from rest_framework import routers
 
 from rest_framework_simplejwt.views import (
@@ -33,4 +33,7 @@ urlpatterns = [
     path('api/posts/<int:pk>', crud.PostDetail.as_view(), name='post-detail' ),
     path('api/upload_images', crud.UploadImage.as_view(), name='upload-image'),
     path('api/create_post', crud.CreatePost.as_view(), name='create-post')
+    path('api/payment/create-order', payment.CreateOrderView.as_view(), name='create-payment-order'),
+    path('api/payment/callback', payment.CallbackView.as_view(), name='callback-order'),
+    path('api/payment/query', payment.QueryOrderView.as_view(), name='query-order'),
 ]

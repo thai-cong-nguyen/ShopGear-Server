@@ -16,6 +16,7 @@ setuptools = "*"
 timedelta = "*"
 djangorestframework-camel-case = "*"
 supabase = "*"
+gunicore = "*"
 
 [dev-packages]
 
