@@ -34,7 +34,6 @@ class LoginView(APIView):
             print(e)
             return Response({"status": status.HTTP_400_BAD_REQUEST, "message": str(e), "data": {}}, status=status.HTTP_400_BAD_REQUEST)
             
-        
 class RegistrationView(APIView):
     serializer_class = RegistrationSerializer
     def post(self, request):
