@@ -39,7 +39,7 @@ class CreateOrderView(APIView):
                 "amount": data.get("amount"),
                 "description": "ShopGear - Payment for the order #"+str(transID),
                 "bank_code": "zalopayapp",
-                "callback_url": ""
+                "callback_url": "api-shopgear.onrender.com/api/payment/callback"
             }
 
             # app_id|app_trans_id|app_user|amount|apptime|embed_data|item
