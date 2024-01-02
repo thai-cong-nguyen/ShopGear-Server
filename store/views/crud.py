@@ -7,8 +7,10 @@ from rest_framework.response import Response
 from rest_framework import status, mixins, generics, viewsets
 from rest_framework.reverse import reverse
 from rest_framework.views import APIView
-from supabase import create_client, Client
+from supabase import create_client, Client, SupabaseStorageClient
 import os
+from datetime import datetime
+
 # USER REQUEST
 
 
@@ -23,21 +25,30 @@ class ApiRoot(APIView):
         })
 
 class UploadImage(APIView):
-    def post(self, request, format=None):
-        url = os.environ.get("SUPABASE_URL")
-        key = os.environ.get("SUPABASE_KEY")
-        supabase : Client = create_client(url, key)
-        bucket_name = 'images'
-        file_path_in_bucket = 'products/test.png'
-        local_image_path = 'media/attachments/thoikhoabieu_1.png'
-        with open(local_image_path, 'rb') as file_content:
-            response = supabase.storage.from_(bucket_name).upload(file_path_in_bucket, file_content)
-        # Check the response
-        if response['error']:
-            Response(f"Error uploading image: {response['error']['message']}", status=status.HTTP_503_SERVICE_UNAVAILABLE)
-        else:
-            Response("Image uploaded successfully!", status=status.HTTP_200_OK)
-
+    def post(self, request):
+        if 'images' in request.FILES:
+            url = os.environ.get("DB_URL")
+            key = os.environ.get("DB_API_KEY")
+            supabase = create_client(url, key)
+            bucket_name = 'Bucket_Images'
+            file_urls = []
+            # Body of Request is FormData and 'images' is the field for uploading images
+            for image in request.FILES.getlist('images'):
+                # You can modify the file name as needed
+                file_image = image.read()
+                timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+                original_name, extension = os.path.splitext(image.name)
+                file_name = f"{timestamp}_{original_name}{extension}"
+                # Upload the image to Supabase storage
+                response = supabase.storage.from_(bucket_name).upload(file_name, file_image)
+                if response.status_code == 200:
+                    file_url = supabase.storage.from_(bucket_name).get_public_url(file_name)
+                    file_urls.append(file_url)
+                else:
+                    return Response({"error": "Failed to upload image", "data": file_urls}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response({"message": "Images uploaded successfully!", "data": file_urls}, status=status.HTTP_200_OK)
+        return Response({"error": "No images provided in the request"}, status=status.HTTP_400_BAD_REQUEST)
+    
 class CreatePost(APIView):
     def post(self, request, format=None):
 
