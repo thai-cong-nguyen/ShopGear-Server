@@ -1,4 +1,4 @@
-from . models import Category, User, Product, Order, OrderItem, Cart, CartItem, Transaction, Post, Field
+from . models import Category, User, Product, Order, OrderItem, Cart, CartItem, Transaction, Post, Field, FieldOption
 from rest_framework import serializers, routers
 from rest_framework.validators import UniqueTogetherValidator
 from rest_framework_simplejwt.tokens import RefreshToken, UntypedToken
@@ -14,11 +14,7 @@ class UserSerializer(serializers.ModelSerializer):
                   'last_name', 'is_admin', 'products', 'posts']
 
 
-class CategorySerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Category
-        fields = ['id', 'name', 'fields']
-        depth = 1
+
 
 
 class ProductSerializer(serializers.ModelSerializer):
@@ -64,13 +60,24 @@ class PostSerializer(serializers.ModelSerializer):
     class Meta:
         model = Post
         fields = ['id', 'user_id', 'product_id', 'description', 'price', 'zone', ]
-        depth = 2
+
+# Field & Category
+class FieldOptionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = FieldOption
+        fields = '__all__'
 
 class FieldSerializer(serializers.ModelSerializer):
+    options = FieldOptionSerializer(many=True, read_only=True)
     class Meta:
         model = Field 
-        fields = ['id', 'name', 'options']
-        depth = 1
+        fields = '__all__'
+
+class CategorySerializer(serializers.ModelSerializer):
+    fields = FieldSerializer(many=True, read_only=True)
+    class Meta:
+        model = Category
+        fields = '__all__'
 
 
 class LoginSerializer(serializers.ModelSerializer):
