@@ -159,7 +159,33 @@ class PostAndProductSerializer(serializers.Serializer):
         post = Post.objects.create(**post_data)
         post_serializer = PostSerializer(post)
         return post_serializer.data
+    
+    def update(self, instance, validated_data):
+        # Logic cập nhật bài đăng
+        instance.product.name = validated_data['product']['name']
+        instance.product.description = validated_data['product']['description']
+        instance.product.price = validated_data['product']['price']
+        instance.product.is_available = validated_data['product']['is_available']
+        
+        category_name = validated_data['product']['category']
+        category = Category.objects.get(name=category_name)
+        instance.product.category = category
+        # Lưu lại đối tượng đã cập nhật
+        instance.product.save()
 
+        # Cập nhật các trường liên quan
+        for field_data in validated_data['fields']:
+            field_instance = instance.product.field_values.get(field=field_data['field'])
+            field_instance.value = field_data['value']
+            field_instance.save()
+
+        # Cập nhật các trường khác tùy theo nhu cầu của bạn
+        instance.description = validated_data['post_description']
+        instance.zone = validated_data['post_zone']
+        instance.save()
+        serializer = PostSerializer(instance)
+
+        return serializer.data
 
 
 class LoginSerializer(serializers.ModelSerializer):

@@ -77,10 +77,14 @@ class FieldDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = Field.objects.all()
     serializer_class = FieldSerializer
 
-class PostList(generics.ListCreateAPIView):
+class PostList(generics.ListAPIView):
+    queryset = Post.objects.all()
+    serializer_class = PostSerializer
+
+class PostCreate(generics.CreateAPIView):
     queryset = Post.objects.all()
     serializer_class = PostAndProductSerializer
-
+    
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -96,7 +100,7 @@ class PostList(generics.ListCreateAPIView):
 
         try: 
             decoded_token = jwt.decode(access_token, os.environ.get("SECRET_KEY"), algorithms=['HS256'])
-            user_id = decoded_token['user_id']
+            user_id = decoded_token['user']
             user = User.objects.get(pk=user_id)
             return user
 
@@ -108,7 +112,12 @@ class PostList(generics.ListCreateAPIView):
 
 class PostDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = Post.objects.all()
-    serializer_class = PostAndProductSerializer
+    serializer_class = PostSerializer
+    def get_serializer_class(self):
+        if self.request.method == 'POST' or self.request.method == 'PUT' or self.request.method == 'PUT':
+            return PostAndProductSerializer
+        return PostSerializer
+    
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
         serializer = self.get_serializer(instance)
@@ -116,11 +125,11 @@ class PostDetail(generics.RetrieveUpdateDestroyAPIView):
 
     def update(self, request, *args, **kwargs):
         instance = self.get_object()
-        serializer = self.get_serializer(instance, data=request.data)
+        serializer = self.get_serializer(instance=instance, data=request.data)
         serializer.is_valid(raise_exception=True)
         user = self.validate_user(request)
-        response_data = serializer.save(user=user)
-        return Response(response_data)
+        response_data = serializer.save(instance=instance,user=user)
+        return Response(response_data, status=status.HTTP_200_OK)
 
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
@@ -135,7 +144,7 @@ class PostDetail(generics.RetrieveUpdateDestroyAPIView):
 
         try: 
             decoded_token = jwt.decode(access_token, os.environ.get("SECRET_KEY"), algorithms=['HS256'])
-            user_id = decoded_token['user_id']
+            user_id = decoded_token['user']
             user = User.objects.get(pk=user_id)
             return user
 

@@ -23,6 +23,7 @@ urlpatterns = [
     path('api/fields/', crud.FieldList.as_view(), name='field-list'),
     path('api/fields/<int:pk>', crud.FieldDetail.as_view(), name='field-detail'),   
     path('api/posts/', crud.PostList.as_view(), name='post-list' ),
+    path('api/posts/create', crud.PostCreate.as_view(), name='post-create' ),
     path('api/posts/<int:pk>', crud.PostDetail.as_view(), name='post-detail' ),
     path('api/upload_images', crud.UploadImage.as_view(), name='upload-image'),
     path('api/payment/create-order', payment.CreateOrderView.as_view(), name='create-payment-order'),
