@@ -12,6 +12,8 @@ import os
 from datetime import datetime
 
 # USER REQUEST
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework.filters import SearchFilter, OrderingFilter
 
 
 class ApiRoot(APIView):
@@ -57,6 +59,11 @@ class CreatePost(APIView):
 class ProductList(generics.ListCreateAPIView):
     queryset = Product.objects.all().order_by('name')
     serializer_class = ProductSerializer
+    # tìm kiếm theo query
+    filter_backends = [SearchFilter, OrderingFilter]
+    search_fields = ['name', 'description', 'user_id__username']
+    ordering_fields = ['price']
+
 
 class ProductDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = Product.objects.all()
@@ -73,6 +80,16 @@ class FieldDetail(generics.RetrieveUpdateDestroyAPIView):
 class PostList(generics.ListCreateAPIView):
     queryset = Post.objects.all()
     serializer_class = PostSerializer
+    def create(self, request, *args, **kwargs):
+        category_name = request.data.get('category')
+        if not category_name:
+            return Response({'error': 'Vui lòng cung cấp giá trị category'}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            category = Category.objects.get(name=category_name)
+        except Category.DoesNotExist:
+            return Response({'error': 'Category không tồn tại'}, status=status.HTTP_404_NOT_FOUND)
+        category_serializer = CategorySerializer(category)
+        return Response(category_serializer.data, status=status.HTTP_200_OK)
 
 class PostDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = Post.objects.all()

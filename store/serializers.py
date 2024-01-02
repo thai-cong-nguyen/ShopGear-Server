@@ -13,19 +13,6 @@ class UserSerializer(serializers.ModelSerializer):
         fields = ['id', 'username', 'first_name',
                   'last_name', 'is_admin', 'products', 'posts']
 
-
-
-
-
-class ProductSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Product
-        fields = ['id', 'user_id', 'category_id', 'name',
-                  'description', 'price', 'is_available', 'attachments', 'field_values']
-        depth = 4
-        read_only_fields = ['user_id']
-
-
 class OrderSerializer(serializers.ModelSerializer):
     class Meta:
         model = Order
@@ -56,11 +43,6 @@ class TransactionSerializer(serializers.ModelSerializer):
         fields = ['id', 'buyer_id', 'seller_id', 'total_price', 'status']
 
 
-class PostSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Post
-        fields = ['id', 'user_id', 'product_id', 'description', 'price', 'zone', ]
-
 # Field & Category
 class FieldOptionSerializer(serializers.ModelSerializer):
     class Meta:
@@ -79,6 +61,18 @@ class CategorySerializer(serializers.ModelSerializer):
         model = Category
         fields = '__all__'
 
+
+class ProductSerializer(serializers.ModelSerializer):
+    category_id = CategorySerializer()
+    class Meta:
+        model = Product
+        fields = '__all__'
+
+class PostSerializer(serializers.ModelSerializer):
+    product_id = ProductSerializer()
+    class Meta:
+        model = Post
+        fields = ['id', 'user_id', 'product_id', 'description', 'price', 'zone']
 
 class LoginSerializer(serializers.ModelSerializer):
     username_or_email = serializers.CharField()

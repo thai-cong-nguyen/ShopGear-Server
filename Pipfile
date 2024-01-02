@@ -17,6 +17,7 @@ timedelta = "*"
 djangorestframework-camel-case = "*"
 supabase = "*"
 gunicorn = "*"
+django-filter = "*"
 
 [dev-packages]
 

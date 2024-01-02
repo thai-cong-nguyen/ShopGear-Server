@@ -33,7 +33,13 @@ class User(models.Model):
 class Field(models.Model):
     category_id = models.ForeignKey(Category, on_delete=models.CASCADE, null=False, default=None, related_name='fields')
     name = models.CharField(max_length=255, blank=True)
-    field_type = models.CharField(max_length=255)
+    class FieldType(models.IntegerChoices):
+        INPUT = 1, 'INPUT'
+        SELECT = 2, ' SELECT'
+        MULTISELECT = 3, 'MULTISELECT'
+
+    field_type = models.IntegerField(choices=FieldType.choices, default=FieldType.INPUT)
+    
     def __str__(self):
         return self.name
 
@@ -64,6 +70,8 @@ class FieldValue(models.Model):
     field_id = models.ForeignKey(Field, on_delete=models.CASCADE)
     value = models.CharField(max_length=255)
     product_id = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='field_values')
+    def __str__(self) -> str:
+        return self.field_id.name + ' - ' + self.value
 
 class Attachment(models.Model):
     class AttachmentType(models.TextChoices):
