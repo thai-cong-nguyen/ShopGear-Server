@@ -31,25 +31,31 @@ class User(models.Model):
         return f'{self.first_name} {self.last_name}'
     
 class Field(models.Model):
-    category_id = models.ForeignKey(Category, on_delete=models.CASCADE, null=False, default=None, related_name='fields')
+    category = models.ForeignKey(Category, on_delete=models.CASCADE, null=False, default=None, related_name='fields')
     name = models.CharField(max_length=255, blank=True)
-    field_type = models.CharField(max_length=255)
+    class FieldType(models.IntegerChoices):
+        INPUT = 1, 'INPUT'
+        SELECT = 2, ' SELECT'
+        MULTISELECT = 3, 'MULTISELECT'
+
+    field_type = models.IntegerField(choices=FieldType.choices, default=FieldType.INPUT)
+    
     def __str__(self):
         return self.name
 
+
 class FieldOption(models.Model):
-    field_id = models.ForeignKey(Field, on_delete=models.CASCADE, null=False, default=None, related_name='options')
+    field = models.ForeignKey(Field, on_delete=models.CASCADE, null=False, default=None, related_name='options')
     name = models.CharField(max_length=255, blank=True)
-    value = models.CharField(max_length=255, blank=True)
 
     def __str__(self):
         return self.name
     
 
 class Product(models.Model):
-    user_id = models.ForeignKey(
+    user = models.ForeignKey(
         User, on_delete=models.CASCADE, null=False, default=None, related_name='products')
-    category_id = models.ForeignKey(
+    category = models.ForeignKey(
         Category, on_delete=models.CASCADE, null=False, default=None)
     name = models.CharField(max_length=100)
     description = models.CharField(
@@ -61,9 +67,11 @@ class Product(models.Model):
         return self.name
     
 class FieldValue(models.Model):
-    field_id = models.ForeignKey(Field, on_delete=models.CASCADE)
+    field= models.ForeignKey(Field, on_delete=models.CASCADE)
     value = models.CharField(max_length=255)
-    product_id = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='field_values')
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='field_values')
+    def __str__(self) -> str:
+        return self.field.name + ' - ' + self.value
 
 class Attachment(models.Model):
     class AttachmentType(models.TextChoices):
@@ -81,7 +89,7 @@ class Attachment(models.Model):
         verbose_name_plural = 'Attachments'
 
 class Order(models.Model):
-    user_id = models.ForeignKey(
+    user = models.ForeignKey(
         User, on_delete=models.CASCADE, null=False, default=None)
     total_price = models.IntegerField(default=0)
     address = models.CharField(max_length=100, default='', blank=True)
@@ -93,38 +101,38 @@ class Order(models.Model):
 
 
 class OrderItem(models.Model):
-    order_id = models.ForeignKey(
+    order= models.ForeignKey(
         Order, on_delete=models.CASCADE, null=False, default=None)
-    product_id = models.ForeignKey(
+    product = models.ForeignKey(
         Product, on_delete=models.CASCADE, null=False, default=None)
     quantity = models.PositiveIntegerField(default=1)
 
     def __str__(self):
-        return self.product_id
+        return self.product
 
 
 class Cart(models.Model):
-    user_id = models.ForeignKey(
+    user = models.ForeignKey(
         User, on_delete=models.CASCADE, null=False, default=None)
 
     def __str__(self):
-        return 'Cart of' + self.user_id
+        return 'Cart of' + self.user
 
 
 class CartItem(models.Model):
-    cart_id = models.ForeignKey(
+    cart= models.ForeignKey(
         Cart, on_delete=models.CASCADE, null=False, default=None)
-    product_id = models.ForeignKey(Product, on_delete=models.CASCADE)
+    product= models.ForeignKey(Product, on_delete=models.CASCADE)
     quantity = models.PositiveBigIntegerField(default=1)
 
     def __str__(self):
-        return self.product_id
+        return self.product
 
 
 class Transaction(models.Model):
-    buyer_id = models.ForeignKey(
+    buyer = models.ForeignKey(
         User, related_name='buyer_transactions', on_delete=models.CASCADE, null=False, default=None)
-    seller_id = models.ForeignKey(
+    seller = models.ForeignKey(
         User, related_name='seller_transactions', on_delete=models.CASCADE, null=False, default=None)
     total_price = models.IntegerField(default=0)
 
@@ -141,12 +149,11 @@ class Transaction(models.Model):
 
 
 class Post(models.Model):
-    user_id = models.ForeignKey(
+    user = models.ForeignKey(
         User, on_delete=models.CASCADE, null=False, default=None, related_name='posts')
-    product_id = models.ForeignKey(
+    product = models.ForeignKey(
         Product, on_delete=models.CASCADE, null=False, default=None, related_name='products')
     description = models.TextField()
-    price = models.IntegerField(default=0)
 
     HO_CHI_MINH = 'HCM'
     DA_NANG = 'DN'
@@ -166,5 +173,5 @@ class Post(models.Model):
         super().save(*args, **kw)
 
     def __str__(self):
-        return self.user_id.first_name + ' ' + self.user_id.last_name + ' - '  + self.product_id.name
+        return self.user.first_name + ' ' + self.user.last_name + ' - '  + self.product.name
 

@@ -1,10 +1,10 @@
 from django.shortcuts import render
-from ..models import Category, User, Product, Order, OrderItem, Cart, CartItem, Transaction, Post, Field
+from ..models import Category, User, Product, Order, OrderItem, Cart, CartItem, Transaction, Post, Field, FieldValue
 
-from ..serializers import UserSerializer, CategorySerializer, ProductSerializer, OrderSerializer, OrderItemSerializer, CartSerializer, CartItemSerializer, TransactionSerializer, PostSerializer, FieldSerializer
+from ..serializers import UserSerializer, CategorySerializer, ProductSerializer, OrderSerializer, OrderItemSerializer, CartSerializer, CartItemSerializer, TransactionSerializer, PostSerializer, FieldSerializer, PostAndProductSerializer, FieldValueSerializer
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from rest_framework import status, mixins, generics, viewsets
+from rest_framework import status, mixins, generics, viewsets, serializers
 from rest_framework.reverse import reverse
 from rest_framework.views import APIView
 from supabase import create_client, Client, SupabaseStorageClient
@@ -12,7 +12,9 @@ import os
 from datetime import datetime
 
 # USER REQUEST
-
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework.filters import SearchFilter, OrderingFilter
+import jwt
 
 class ApiRoot(APIView):
     def get(self, request, format=None):
@@ -57,6 +59,11 @@ class CreatePost(APIView):
 class ProductList(generics.ListCreateAPIView):
     queryset = Product.objects.all().order_by('name')
     serializer_class = ProductSerializer
+    # tìm kiếm theo query
+    filter_backends = [SearchFilter, OrderingFilter]
+    search_fields = ['name', 'description', 'user__username']
+    ordering_fields = ['price']
+
 
 class ProductDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = Product.objects.all()
@@ -72,11 +79,73 @@ class FieldDetail(generics.RetrieveUpdateDestroyAPIView):
 
 class PostList(generics.ListCreateAPIView):
     queryset = Post.objects.all()
-    serializer_class = PostSerializer
+    serializer_class = PostAndProductSerializer
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = self.validate_user(request)
+        response_data = serializer.save(user=user)
+        return Response(response_data, status=status.HTTP_201_CREATED)
+    
+    def validate_user(self, request, *args, **kwargs):
+        access_token = request.data.get('user')
+
+        if access_token is None: 
+            raise serializers.ValidationError({'error': 'Access token is missing'})
+
+        try: 
+            decoded_token = jwt.decode(access_token, os.environ.get("SECRET_KEY"), algorithms=['HS256'])
+            user_id = decoded_token['user_id']
+            user = User.objects.get(pk=user_id)
+            return user
+
+        except jwt.ExpiredSignatureError:
+            raise serializers.ValidationError({'error': 'Token has expired'})
+        except jwt.InvalidTokenError:
+            raise serializers.ValidationError({'error': 'Invalid token'})
+        
 
 class PostDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = Post.objects.all()
-    serializer_class = PostSerializer
+    serializer_class = PostAndProductSerializer
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance)
+        return Response(serializer.data)
+
+    def update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = self.validate_user(request)
+        response_data = serializer.save(user=user)
+        return Response(response_data)
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        instance.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+    
+    def validate_user(self, request, *args, **kwargs):
+        access_token = request.data.get('user')
+
+        if access_token is None: 
+            raise serializers.ValidationError({'error': 'Access token is missing'})
+
+        try: 
+            decoded_token = jwt.decode(access_token, os.environ.get("SECRET_KEY"), algorithms=['HS256'])
+            user_id = decoded_token['user_id']
+            user = User.objects.get(pk=user_id)
+            return user
+
+        except jwt.ExpiredSignatureError:
+            raise serializers.ValidationError({'error': 'Token has expired'})
+        except jwt.InvalidTokenError:
+            raise serializers.ValidationError({'error': 'Invalid token'})
+
+
+
 
 class CategoryList(generics.ListCreateAPIView):
     queryset = Category.objects.all()
@@ -93,3 +162,7 @@ class UserList(generics.ListCreateAPIView):
 class UserDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = User.objects.all()
     serializer_class = UserSerializer
+
+class FieldValueList(generics.ListCreateAPIView):
+    queryset = FieldValue.objects.all()
+    serializer_class = FieldValueSerializer
