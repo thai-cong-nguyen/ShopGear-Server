@@ -1,4 +1,4 @@
-from . models import Category, User, Product, Order, OrderItem, Cart, CartItem, Transaction, Post, Field, FieldOption
+from . models import Category, User, Product, Order, OrderItem, Cart, CartItem, Transaction, Post, Field, FieldOption, FieldValue
 from rest_framework import serializers, routers
 from rest_framework.validators import UniqueTogetherValidator
 from rest_framework_simplejwt.tokens import RefreshToken, UntypedToken
@@ -16,31 +16,31 @@ class UserSerializer(serializers.ModelSerializer):
 class OrderSerializer(serializers.ModelSerializer):
     class Meta:
         model = Order
-        fields = ['id', 'user_id', 'total_price', 'addresses', 'phone', 'date']
+        fields = ['id', 'user', 'total_price', 'addresses', 'phone', 'date']
 
 
 class OrderItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = OrderItem
-        fields = ['id', 'order_id', 'product_id', 'quantiy']
+        fields = ['id', 'order', 'product', 'quantiy']
 
 
 class CartSerializer(serializers.ModelSerializer):
     class Meta:
         model = Cart
-        fields = ['id', 'user_id']
+        fields = ['id', 'user']
 
 
 class CartItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = CartItem
-        fields = ['id', 'cart_id', 'product_id', 'quantiy']
+        fields = ['id', 'cart', 'product', 'quantiy']
 
 
 class TransactionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Transaction
-        fields = ['id', 'buyer_id', 'seller_id', 'total_price', 'status']
+        fields = ['id', 'buyer', 'seller', 'total_price', 'status']
 
 
 # Field & Category
@@ -49,30 +49,118 @@ class FieldOptionSerializer(serializers.ModelSerializer):
         model = FieldOption
         fields = '__all__'
 
+
 class FieldSerializer(serializers.ModelSerializer):
     options = FieldOptionSerializer(many=True, read_only=True)
     class Meta:
         model = Field 
         fields = '__all__'
+        
+
+class FieldValueSerializer(serializers.ModelSerializer):
+    # field = FieldSerializer(read_only=True)
+    class Meta:
+        model = FieldValue
+        fields = '__all__'
+        read_only_fields = ['product']
+        
+    def to_internal_value(self, data):
+        field_name = data.get('field')
+
+        if field_name:
+            matching_fields = Field.objects.filter(name=field_name)
+
+            if matching_fields.exists():
+                if matching_fields.count() > 1:
+                    raise serializers.ValidationError({"field": ["Multiple fields with name '{}' found.".format(field_name)]})
+
+                field_instance = matching_fields.first()
+                data['field'] = field_instance.pk
+            else:
+                raise serializers.ValidationError({"field": ["Field with name '{}' does not exist.".format(field_name)]})
+
+        return super().to_internal_value(data)
 
 class CategorySerializer(serializers.ModelSerializer):
     fields = FieldSerializer(many=True, read_only=True)
     class Meta:
         model = Category
-        fields = '__all__'
+        fields = 'name'
 
 
 class ProductSerializer(serializers.ModelSerializer):
-    category_id = CategorySerializer()
+    field_values = FieldValueSerializer(many=True, read_only=True)
     class Meta:
         model = Product
         fields = '__all__'
+    def to_internal_value(self, data):
+        # Convert category name to its corresponding primary key
+        category_name = data.get('category')
+        if category_name:
+            try:
+                category = Category.objects.get(name=category_name)
+                data['category'] = category.pk
+            except Category.DoesNotExist:
+                raise serializers.ValidationError(f'Category with name "{category_name}" does not exist.')
+
+        return super().to_internal_value(data)
 
 class PostSerializer(serializers.ModelSerializer):
-    product_id = ProductSerializer()
+    product = ProductSerializer()
     class Meta:
         model = Post
-        fields = ['id', 'user_id', 'product_id', 'description', 'price', 'zone']
+        fields = '__all__'
+
+class PostAndProductSerializer(serializers.Serializer):
+    # all fields of a product 
+    product = ProductSerializer()
+    fields = FieldValueSerializer(many=True)
+
+    # user-defined fields
+    user = serializers.HiddenField(default=serializers.CurrentUserDefault())
+
+    # post fields
+    post_description = serializers.CharField()
+    post_zone = serializers.CharField()
+
+    def create(self, validated_data):
+        user = validated_data.pop('user')
+
+        # Xử lý dữ liệu và tạo Product
+        product_data = validated_data['product']
+        product_data['user'] = user
+        category_name = product_data['category']
+        category = Category.objects.get(name=category_name)
+        product_data['category'] = category
+        product = Product.objects.create(**product_data)
+
+        # Thêm fields liên kết với product 
+        fields_data = validated_data['fields']
+        for field_data in fields_data:
+            # Convert field names to primary keys
+            field_name = field_data.get('field')
+            try:
+                field = Field.objects.get(name=field_name)
+            except Field.DoesNotExist:
+                raise serializers.ValidationError(field_name)
+            field_data['field'] = field
+            field_data['product'] = product
+
+            # Tạo FieldValue với primary keys đã được chuyển đổi
+            FieldValue.objects.create(**field_data)
+
+        # Tạo Post
+        post_data = {
+            'user': user,
+            'product': product,
+            'description': validated_data['post_description'],
+            'zone': validated_data['post_zone'],
+        }
+        post = Post.objects.create(**post_data)
+        post_serializer = PostSerializer(post)
+        return post_serializer.data
+
+
 
 class LoginSerializer(serializers.ModelSerializer):
     username_or_email = serializers.CharField()
@@ -131,10 +219,10 @@ class ResetTokenSerializer(serializers.Serializer):
             raise serializers.ValidationError("Invalid Refresh Token")
         try:
             decoded_token = UntypedToken(token)
-            user_id = decoded_token.payload.get('user_id')
-            if user_id is None or not isinstance(user_id, int):
+            user = decoded_token.payload.get('user')
+            if user is None or not isinstance(user, int):
                 raise serializers.ValidationError("Invalid user ID in token payload")
-            user = User.objects.get(pk=user_id)
+            user = User.objects.get(pk=user)
             new_token = RefreshToken.for_user(user)
             data['access_token'] = new_token.access_token
             data['refresh_token'] = new_token

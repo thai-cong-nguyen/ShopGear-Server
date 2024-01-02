@@ -18,6 +18,7 @@ djangorestframework-camel-case = "*"
 supabase = "*"
 gunicorn = "*"
 django-filter = "*"
+pyjwt = "*"
 
 [dev-packages]
 
