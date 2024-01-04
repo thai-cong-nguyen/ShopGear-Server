@@ -159,12 +159,14 @@ class Post(models.Model):
     DA_NANG = 'DN'
     HA_NOI = 'HN'
     CAN_THO = 'CT'
+    HAI_PHONG = 'HP'
 
     ZONE_CHOICES = [    
         (HO_CHI_MINH, 'TP. Hồ Chí Minh'),
         (DA_NANG, 'Đà Nẵng'),
         (HA_NOI, 'Hà Nội'),
-        (CAN_THO, 'Cần Thơ')
+        (CAN_THO, 'Cần Thơ'),
+        (HAI_PHONG, 'Hải Phòng')
     ]
     zone = models.CharField(choices=ZONE_CHOICES,
                             max_length=4, default=HO_CHI_MINH)
