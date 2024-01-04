@@ -1,4 +1,4 @@
-from . models import Category, User, Product, Order, OrderItem, Cart, CartItem, Transaction, Post, Field, FieldOption, FieldValue
+from . models import Category, User, Product, Order, OrderItem, Cart, CartItem, Transaction, Post, Field, FieldOption, FieldValue, Attachment
 from rest_framework import serializers, routers
 from rest_framework.validators import UniqueTogetherValidator
 from rest_framework_simplejwt.tokens import RefreshToken, UntypedToken
@@ -127,11 +127,18 @@ class ProductSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError(f'Category with name "{category_name}" does not exist.')
 
         return super().to_internal_value(data)
-
+    
+class AttachmentSerializer(serializers.ModelSerializer):
+    publication = None
+    class Meta:
+        model = Attachment
+        exclude = ['publication', 'id']
+        
 class PostSerializer(serializers.ModelSerializer):
     product = ProductSerializer()
     zone = serializers.CharField(source='get_zone_display')
     user = UsernameSerializer(read_only=True)
+    attachments = AttachmentSerializer(read_only=True, many=True, source='product.attachments')
     class Meta:
         model = Post
         fields = '__all__'
@@ -146,7 +153,7 @@ class PostAndProductSerializer(serializers.Serializer):
     # post fields
     post_description = serializers.CharField()
     post_zone = serializers.CharField()
-
+    attachments = AttachmentSerializer(required=False, many=True)
     def create(self, validated_data):
         user = validated_data.pop('user')
         # Xử lý dữ liệu và tạo Product
@@ -159,6 +166,10 @@ class PostAndProductSerializer(serializers.Serializer):
 
         # Thêm fields liên kết với product 
         fields_data = validated_data['fields']
+        
+        # attachment data 
+        attachments_data = validated_data['attachments']
+        
         for field_data in fields_data:
             # Convert field names to primary keys
             field = Field.objects.get(pk=field_data['field'])
@@ -167,7 +178,12 @@ class PostAndProductSerializer(serializers.Serializer):
 
             # Tạo FieldValue với primary keys đã được chuyển đổi
             FieldValue.objects.create(**field_data)
-
+        
+        # Lưu attachment 
+        for attachment in attachments_data:
+            attachment['publication'] = product 
+            Attachment.objects.create(**attachment)
+            
         # Tạo Post
         post_data = {
             'user': user,
@@ -276,3 +292,5 @@ class ResetTokenSerializer(serializers.Serializer):
         return data
     class Meta: 
         fields = ["token"]
+
+

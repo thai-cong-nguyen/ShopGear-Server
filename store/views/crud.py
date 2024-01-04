@@ -1,7 +1,7 @@
 from django.shortcuts import render
-from ..models import Category, User, Product, Order, OrderItem, Cart, CartItem, Transaction, Post, Field, FieldValue, FieldOption
+from ..models import Category, User, Product, Order, OrderItem, Cart, CartItem, Transaction, Post, Field, FieldValue, FieldOption, Attachment
 
-from ..serializers import UserSerializer, CategorySerializer, ProductSerializer, OrderSerializer, OrderItemSerializer, CartSerializer, CartItemSerializer, TransactionSerializer, PostSerializer, FieldSerializer, PostAndProductSerializer, FieldValueSerializer, FieldOptionSerializer
+from ..serializers import UserSerializer, CategorySerializer, ProductSerializer, OrderSerializer, OrderItemSerializer, CartSerializer, CartItemSerializer, TransactionSerializer, PostSerializer, FieldSerializer, PostAndProductSerializer, FieldValueSerializer, FieldOptionSerializer, AttachmentSerializer
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status, mixins, generics, viewsets, serializers
@@ -209,3 +209,7 @@ class FieldsInCategoryView(APIView):
         serializer = FieldSerializer(fields_in_category, many=True)
 
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+class AttachmentList(generics.ListCreateAPIView):
+    queryset = Attachment.objects.all()
+    serializer_class = AttachmentSerializer
