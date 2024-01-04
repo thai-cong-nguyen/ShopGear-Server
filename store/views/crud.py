@@ -1,7 +1,7 @@
 from django.shortcuts import render
-from ..models import Category, User, Product, Order, OrderItem, Cart, CartItem, Transaction, Post, Field, FieldValue, FieldOption
+from ..models import Category, User, Product, Order, OrderItem, Cart, CartItem, Transaction, Post, Field, FieldValue, FieldOption, Attachment
 
-from ..serializers import UserSerializer, CategorySerializer, ProductSerializer, OrderSerializer, OrderItemSerializer, CartSerializer, CartItemSerializer, TransactionSerializer, PostSerializer, FieldSerializer, PostAndProductSerializer, FieldValueSerializer, FieldOptionSerializer
+from ..serializers import UserSerializer, CategorySerializer, ProductSerializer, OrderSerializer, OrderItemSerializer, CartSerializer, CartItemSerializer, TransactionSerializer, PostSerializer, FieldSerializer, PostAndProductSerializer, FieldValueSerializer, FieldOptionSerializer, AttachmentSerializer
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status, mixins, generics, viewsets, serializers
@@ -123,27 +123,23 @@ class PostDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = Post.objects.all()
     serializer_class = PostSerializer
     def get_serializer_class(self):
-        if self.request.method == 'POST' or self.request.method == 'PUT' or self.request.method == 'PUT':
-            return PostAndProductSerializer
-        return PostSerializer
-    
-    def retrieve(self, request, *args, **kwargs):
-        instance = self.get_object()
-        serializer = self.get_serializer(instance)
-        return Response(serializer.data)
+        if self.request.method == 'GET':
+            return PostSerializer
+        return PostAndProductSerializer
 
     def update(self, request, *args, **kwargs):
         instance = self.get_object()
+        # pre-process the data
+        fields_data = request.data.get('fields')
+        product_data = request.data.get('product')
+        fields_data = [{'product': product_data, **field_data} for field_data in fields_data]
+        request.data['fields'] = fields_data 
+        
         serializer = self.get_serializer(instance=instance, data=request.data)
         serializer.is_valid(raise_exception=True)
         user = self.validate_user(request)
-        response_data = serializer.save(instance=instance,user=user)
+        response_data = serializer.save(instance=instance,user=user, fields=fields_data)
         return Response(response_data, status=status.HTTP_200_OK)
-
-    def destroy(self, request, *args, **kwargs):
-        instance = self.get_object()
-        instance.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
     
     def validate_user(self, request, *args, **kwargs):
         access_token = request.data.get('user')
@@ -209,3 +205,7 @@ class FieldsInCategoryView(APIView):
         serializer = FieldSerializer(fields_in_category, many=True)
 
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+class AttachmentList(generics.ListCreateAPIView):
+    queryset = Attachment.objects.all()
+    serializer_class = AttachmentSerializer

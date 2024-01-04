@@ -1,4 +1,4 @@
-from . models import Category, User, Product, Order, OrderItem, Cart, CartItem, Transaction, Post, Field, FieldOption, FieldValue
+from . models import Category, User, Product, Order, OrderItem, Cart, CartItem, Transaction, Post, Field, FieldOption, FieldValue, Attachment
 from rest_framework import serializers, routers
 from rest_framework.validators import UniqueTogetherValidator
 from rest_framework_simplejwt.tokens import RefreshToken, UntypedToken
@@ -12,7 +12,14 @@ class UserSerializer(serializers.ModelSerializer):
         model = User
         fields = ['id', 'username', 'first_name',
                   'last_name', 'is_admin', 'products', 'posts']
-
+class UsernameSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['username', 'first_name', 'last_name']
+    def to_representation(self, instance):
+        rep = super().to_representation(instance)
+        return rep['first_name'] + ' ' + rep['last_name']
+    
 class OrderSerializer(serializers.ModelSerializer):
     class Meta:
         model = Order
@@ -59,18 +66,13 @@ class FieldSerializer(serializers.ModelSerializer):
 class FieldForFieldValueSerializer(serializers.ModelSerializer):
     class Meta:
         model = Field
-        fields = ['name']
+        fields = '__all__'
 
 class FieldValueSerializer(serializers.ModelSerializer):
     field = FieldForFieldValueSerializer(read_only=True)
     class Meta:
         model = FieldValue
         fields = ['field', 'value']
-    def to_representation(self, instance):
-        representation = super().to_representation(instance)
-        field_representation = representation['field']
-        field_name = field_representation['name']
-        return { 'tag': field_name, 'value': representation['value'] }
         
     def to_internal_value(self, data):
         field_name = data.get('field')
@@ -84,6 +86,13 @@ class FieldValueSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError(f'Category with name "{category_id}" does not exist.')
             
         return super().to_internal_value(data)
+    
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        field_representation = representation['field']
+        field_name = field_representation['name']
+        return { 'tag': field_name, 'value': representation['value'] }
+
     
 class FieldCategorySerializer(serializers.ModelSerializer):
     options = FieldOptionSerializer(many=True, read_only=True)
@@ -100,10 +109,15 @@ class CategorySerializer(serializers.ModelSerializer):
 
 class ProductSerializer(serializers.ModelSerializer):
     field_values = FieldValueSerializer(many=True, read_only=True)
-    category = serializers.StringRelatedField()
     class Meta:
         model = Product
         fields = '__all__'
+    def to_representation(self, instance):
+        # Override this method to customize the representation during GET requests
+        representation = super().to_representation(instance)
+        representation['category'] = Category.objects.get(pk=representation['category']).name
+        return representation
+    
     def to_internal_value(self, data):
         # Convert category name to its corresponding primary key
         category_name = data.get('category')
@@ -115,10 +129,18 @@ class ProductSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError(f'Category with name "{category_name}" does not exist.')
 
         return super().to_internal_value(data)
+    
+class AttachmentSerializer(serializers.ModelSerializer):
+    publication = None
+    class Meta:
+        model = Attachment
+        exclude = ['publication']
 
 class PostSerializer(serializers.ModelSerializer):
     product = ProductSerializer()
     zone = serializers.CharField(source='get_zone_display')
+    user = UsernameSerializer(read_only=True)
+    attachments = AttachmentSerializer(read_only=True, many=True, source='product.attachments')
     class Meta:
         model = Post
         fields = '__all__'
@@ -126,14 +148,14 @@ class PostSerializer(serializers.ModelSerializer):
 class PostAndProductSerializer(serializers.Serializer):
     # all fields of a product 
     product = ProductSerializer()
-    fields = FieldValueSerializer(many=True)
+    fields = FieldValueSerializer(many=True, write_only=True)
 
     # user-defined fields
     user = serializers.HiddenField(default=serializers.CurrentUserDefault())
     # post fields
-    post_description = serializers.CharField()
-    post_zone = serializers.CharField()
-
+    post_description = serializers.CharField(write_only=True)
+    post_zone = serializers.CharField(write_only=True)
+    attachments = AttachmentSerializer(required=False, many=True)
     def create(self, validated_data):
         user = validated_data.pop('user')
         # Xử lý dữ liệu và tạo Product
@@ -146,6 +168,10 @@ class PostAndProductSerializer(serializers.Serializer):
 
         # Thêm fields liên kết với product 
         fields_data = validated_data['fields']
+        
+        # attachment data 
+        attachments_data = validated_data['attachments']
+        
         for field_data in fields_data:
             # Convert field names to primary keys
             field = Field.objects.get(pk=field_data['field'])
@@ -154,7 +180,12 @@ class PostAndProductSerializer(serializers.Serializer):
 
             # Tạo FieldValue với primary keys đã được chuyển đổi
             FieldValue.objects.create(**field_data)
-
+        
+        # Lưu attachment 
+        for attachment in attachments_data:
+            attachment['publication'] = product 
+            Attachment.objects.create(**attachment)
+            
         # Tạo Post
         post_data = {
             'user': user,
@@ -173,19 +204,29 @@ class PostAndProductSerializer(serializers.Serializer):
         instance.product.price = validated_data['product']['price']
         instance.product.is_available = validated_data['product']['is_available']
         
-        category_name = validated_data['product']['category']
-        category = Category.objects.get(name=category_name)
+        category = validated_data['product']['category']
         instance.product.category = category
         # Lưu lại đối tượng đã cập nhật
         instance.product.save()
-
         # Cập nhật các trường liên quan
         for field_data in validated_data['fields']:
-            field_instance = instance.product.field_values.get(field=field_data['field'])
-            field_instance.value = field_data['value']
-            field_instance.save()
-
-        # Cập nhật các trường khác tùy theo nhu cầu của bạn
+            field = Field.objects.get(pk=field_data['field'])
+            field_value = FieldValue.objects.get(field=field, product=instance.product)
+            field_value.value = field_data['value']
+            field_value.save()
+            
+        # Update or create attachments
+        for attachment_data in validated_data['attachments']:
+            attachment_data['publication'] = instance.product
+            attachment, created = Attachment.objects.get_or_create(file=attachment_data['file'], defaults={'file_type': attachment_data['file_type']}, publication=instance.product)
+            if not created:
+                attachment.file_type = attachment_data['file_type']
+                attachment.file = attachment_data['file']
+                attachment.save()
+            
+            
+            
+        # Cập nhật các trường khác 
         instance.description = validated_data['post_description']
         instance.zone = validated_data['post_zone']
         instance.save()
@@ -263,3 +304,5 @@ class ResetTokenSerializer(serializers.Serializer):
         return data
     class Meta: 
         fields = ["token"]
+
+

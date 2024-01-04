@@ -67,7 +67,7 @@ class Product(models.Model):
         return self.name
     
 class FieldValue(models.Model):
-    field = models.ForeignKey(Field, on_delete=models.CASCADE, related_name='field_values')
+    field = models.ForeignKey(Field, on_delete=models.CASCADE)
     value = models.CharField(max_length=255)
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='field_values')
     def __str__(self) -> str:
@@ -78,10 +78,11 @@ class Attachment(models.Model):
         PHOTO = "Photo", _("Photo")
         VIDEO = "Video", _("Video")
 
-    file = models.ImageField('Attachment', upload_to='attachments/')
+    file = models.CharField(max_length=255, verbose_name="Attachment URL")
     file_type = models.CharField('File type', choices=AttachmentType.choices, max_length=10)
 
     publication = models.ForeignKey(Product, on_delete=models.CASCADE, verbose_name='Model that uses the image field', related_name='attachments', null=False, default=None)
+    
     def __str__(self):
         return self.publication.name
     class Meta:
