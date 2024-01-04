@@ -66,18 +66,13 @@ class FieldSerializer(serializers.ModelSerializer):
 class FieldForFieldValueSerializer(serializers.ModelSerializer):
     class Meta:
         model = Field
-        fields = ['name']
+        fields = '__all__'
 
 class FieldValueSerializer(serializers.ModelSerializer):
     field = FieldForFieldValueSerializer(read_only=True)
     class Meta:
         model = FieldValue
         fields = ['field', 'value']
-    def to_representation(self, instance):
-        representation = super().to_representation(instance)
-        field_representation = representation['field']
-        field_name = field_representation['name']
-        return { 'tag': field_name, 'value': representation['value'] }
         
     def to_internal_value(self, data):
         field_name = data.get('field')
@@ -91,6 +86,13 @@ class FieldValueSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError(f'Category with name "{category_id}" does not exist.')
             
         return super().to_internal_value(data)
+    
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        field_representation = representation['field']
+        field_name = field_representation['name']
+        return { 'tag': field_name, 'value': representation['value'] }
+
     
 class FieldCategorySerializer(serializers.ModelSerializer):
     options = FieldOptionSerializer(many=True, read_only=True)
@@ -132,8 +134,8 @@ class AttachmentSerializer(serializers.ModelSerializer):
     publication = None
     class Meta:
         model = Attachment
-        exclude = ['publication', 'id']
-        
+        exclude = ['publication']
+
 class PostSerializer(serializers.ModelSerializer):
     product = ProductSerializer()
     zone = serializers.CharField(source='get_zone_display')
@@ -146,13 +148,13 @@ class PostSerializer(serializers.ModelSerializer):
 class PostAndProductSerializer(serializers.Serializer):
     # all fields of a product 
     product = ProductSerializer()
-    fields = FieldValueSerializer(many=True)
+    fields = FieldValueSerializer(many=True, write_only=True)
 
     # user-defined fields
     user = serializers.HiddenField(default=serializers.CurrentUserDefault())
     # post fields
-    post_description = serializers.CharField()
-    post_zone = serializers.CharField()
+    post_description = serializers.CharField(write_only=True)
+    post_zone = serializers.CharField(write_only=True)
     attachments = AttachmentSerializer(required=False, many=True)
     def create(self, validated_data):
         user = validated_data.pop('user')
@@ -202,18 +204,28 @@ class PostAndProductSerializer(serializers.Serializer):
         instance.product.price = validated_data['product']['price']
         instance.product.is_available = validated_data['product']['is_available']
         
-        category_name = validated_data['product']['category']
-        category = Category.objects.get(name=category_name)
+        category = validated_data['product']['category']
         instance.product.category = category
         # Lưu lại đối tượng đã cập nhật
         instance.product.save()
-
         # Cập nhật các trường liên quan
         for field_data in validated_data['fields']:
-            field_instance = instance.product.field_values.get(field=field_data['field'])
-            field_instance.value = field_data['value']
-            field_instance.save()
-
+            field = Field.objects.get(pk=field_data['field'])
+            field_value = FieldValue.objects.get(field=field, product=instance.product)
+            field_value.value = field_data['value']
+            field_value.save()
+            
+        # Update or create attachments
+        for attachment_data in validated_data['attachments']:
+            attachment_data['publication'] = instance.product
+            attachment, created = Attachment.objects.get_or_create(file=attachment_data['file'], defaults={'file_type': attachment_data['file_type']}, publication=instance.product)
+            if not created:
+                attachment.file_type = attachment_data['file_type']
+                attachment.file = attachment_data['file']
+                attachment.save()
+            
+            
+            
         # Cập nhật các trường khác 
         instance.description = validated_data['post_description']
         instance.zone = validated_data['post_zone']

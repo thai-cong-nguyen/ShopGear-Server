@@ -67,7 +67,7 @@ class Product(models.Model):
         return self.name
     
 class FieldValue(models.Model):
-    field = models.ForeignKey(Field, on_delete=models.CASCADE, related_name='field_values')
+    field = models.ForeignKey(Field, on_delete=models.CASCADE)
     value = models.CharField(max_length=255)
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='field_values')
     def __str__(self) -> str:
