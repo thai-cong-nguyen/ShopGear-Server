@@ -67,7 +67,7 @@ class Product(models.Model):
         return self.name
     
 class FieldValue(models.Model):
-    field= models.ForeignKey(Field, on_delete=models.CASCADE)
+    field = models.ForeignKey(Field, on_delete=models.CASCADE, related_name='field_values')
     value = models.CharField(max_length=255)
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='field_values')
     def __str__(self) -> str:
@@ -158,10 +158,15 @@ class Post(models.Model):
     HO_CHI_MINH = 'HCM'
     DA_NANG = 'DN'
     HA_NOI = 'HN'
+    CAN_THO = 'CT'
+    HAI_PHONG = 'HP'
+
     ZONE_CHOICES = [    
-        (HO_CHI_MINH, 'Hồ Chí Minh'),
+        (HO_CHI_MINH, 'TP. Hồ Chí Minh'),
         (DA_NANG, 'Đà Nẵng'),
         (HA_NOI, 'Hà Nội'),
+        (CAN_THO, 'Cần Thơ'),
+        (HAI_PHONG, 'Hải Phòng')
     ]
     zone = models.CharField(choices=ZONE_CHOICES,
                             max_length=4, default=HO_CHI_MINH)
