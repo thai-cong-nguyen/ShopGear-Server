@@ -19,6 +19,7 @@ supabase = "*"
 gunicorn = "*"
 django-filter = "*"
 pyjwt = "*"
+django-cors-headers = "*"
 
 [dev-packages]
 
