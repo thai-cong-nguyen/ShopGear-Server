@@ -66,6 +66,7 @@ INSTALLED_APPS = [
     'rest_framework',
     # 'rest_framework_authtoken',
     'rest_framework_simplejwt',
+    'corsheaders',
 ]
 
 REST_FRAMEWORK = {
@@ -86,9 +87,20 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'djangorestframework_camel_case.middleware.CamelCaseMiddleWare',
+    'corsheaders.middleware.CorsMiddleware',
+    'django.middleware.common.CommonMiddleware',
 ]
 
 ROOT_URLCONF = 'server.urls'
+
+CORS_ALLOW_ALL_ORIGINS = True # If this is used then `CORS_ALLOWED_ORIGINS` will not have any effect
+CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOWED_ORIGINS = [
+    'https://api-shopgear.onrender.com', 'https://13.228.225.19', 'https://18.142.128.26', 'https://54.254.162.138', 'https://127.0.0.1',
+] # If this is used, then not need to use `CORS_ALLOW_ALL_ORIGINS = True`
+CORS_ALLOWED_ORIGIN_REGEXES = [
+    'https://api-shopgear.onrender.com', 'https://13.228.225.19', 'https://18.142.128.26', 'https://54.254.162.138', 'https://127.0.0.1',
+]
 
 TEMPLATES = [
     {
