@@ -12,7 +12,14 @@ class UserSerializer(serializers.ModelSerializer):
         model = User
         fields = ['id', 'username', 'first_name',
                   'last_name', 'is_admin', 'products', 'posts']
-
+class UsernameSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['username', 'first_name', 'last_name']
+    def to_representation(self, instance):
+        rep = super().to_representation(instance)
+        return rep['first_name'] + ' ' + rep['last_name']
+    
 class OrderSerializer(serializers.ModelSerializer):
     class Meta:
         model = Order
@@ -100,10 +107,15 @@ class CategorySerializer(serializers.ModelSerializer):
 
 class ProductSerializer(serializers.ModelSerializer):
     field_values = FieldValueSerializer(many=True, read_only=True)
-    category = serializers.StringRelatedField()
     class Meta:
         model = Product
         fields = '__all__'
+    def to_representation(self, instance):
+        # Override this method to customize the representation during GET requests
+        representation = super().to_representation(instance)
+        representation['category'] = Category.objects.get(pk=representation['category']).name
+        return representation
+    
     def to_internal_value(self, data):
         # Convert category name to its corresponding primary key
         category_name = data.get('category')
@@ -119,6 +131,7 @@ class ProductSerializer(serializers.ModelSerializer):
 class PostSerializer(serializers.ModelSerializer):
     product = ProductSerializer()
     zone = serializers.CharField(source='get_zone_display')
+    user = UsernameSerializer(read_only=True)
     class Meta:
         model = Post
         fields = '__all__'
@@ -185,7 +198,7 @@ class PostAndProductSerializer(serializers.Serializer):
             field_instance.value = field_data['value']
             field_instance.save()
 
-        # Cập nhật các trường khác tùy theo nhu cầu của bạn
+        # Cập nhật các trường khác 
         instance.description = validated_data['post_description']
         instance.zone = validated_data['post_zone']
         instance.save()
