@@ -1,7 +1,7 @@
 from django.shortcuts import render
-from ..models import Category, User, Product, Order, OrderItem, Cart, CartItem, Transaction, Post, Field, FieldValue
+from ..models import Category, User, Product, Order, OrderItem, Cart, CartItem, Transaction, Post, Field, FieldValue, FieldOption
 
-from ..serializers import UserSerializer, CategorySerializer, ProductSerializer, OrderSerializer, OrderItemSerializer, CartSerializer, CartItemSerializer, TransactionSerializer, PostSerializer, FieldSerializer, PostAndProductSerializer, FieldValueSerializer
+from ..serializers import UserSerializer, CategorySerializer, ProductSerializer, OrderSerializer, OrderItemSerializer, CartSerializer, CartItemSerializer, TransactionSerializer, PostSerializer, FieldSerializer, PostAndProductSerializer, FieldValueSerializer, FieldOptionSerializer
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status, mixins, generics, viewsets, serializers
@@ -10,7 +10,7 @@ from rest_framework.views import APIView
 from supabase import create_client, Client, SupabaseStorageClient
 import os
 from datetime import datetime
-
+from django.shortcuts import get_object_or_404
 # USER REQUEST
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter, OrderingFilter
@@ -72,6 +72,8 @@ class ProductDetail(generics.RetrieveUpdateDestroyAPIView):
 class FieldList(generics.ListCreateAPIView):
     queryset = Field.objects.all()
     serializer_class = FieldSerializer
+    filter_backends = [DjangoFilterBackend]
+    search_fields = ['category']
 
 class FieldDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = Field.objects.all()
@@ -86,10 +88,17 @@ class PostCreate(generics.CreateAPIView):
     serializer_class = PostAndProductSerializer
     
     def create(self, request, *args, **kwargs):
+        # pre-process the data
+        fields_data = request.data.get('fields')
+        product_data = request.data.get('product')
+        fields_data = [{'product': product_data, **field_data} for field_data in fields_data]
+        request.data['fields'] = fields_data 
+        
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = self.validate_user(request)
-        response_data = serializer.save(user=user)
+
+        response_data = serializer.save(user=user, fields=fields_data)
         return Response(response_data, status=status.HTTP_201_CREATED)
     
     def validate_user(self, request, *args, **kwargs):
@@ -175,3 +184,28 @@ class UserDetail(generics.RetrieveUpdateDestroyAPIView):
 class FieldValueList(generics.ListCreateAPIView):
     queryset = FieldValue.objects.all()
     serializer_class = FieldValueSerializer
+
+class FieldValueDetail(generics.RetrieveUpdateDestroyAPIView):
+    queryset = FieldValue.objects.all()
+    serializer_class = FieldValueSerializer
+
+class FieldOptionList(generics.ListCreateAPIView):
+    queryset = FieldOption.objects.all()
+    serializer_class = FieldOptionSerializer
+
+class FieldOptionDetail(generics.RetrieveUpdateDestroyAPIView):
+    queryset = FieldOption.objects.all()
+    serializer_class = FieldOptionSerializer
+
+class FieldsInCategoryView(APIView):
+    def get(self, request, category_name, format=None):
+        # Get the Category instance based on the name
+        category = get_object_or_404(Category, name=category_name)
+
+        # Search for fields related to the specified category
+        fields_in_category = Field.objects.filter(category=category)
+
+        # Serialize the fields
+        serializer = FieldSerializer(fields_in_category, many=True)
+
+        return Response(serializer.data, status=status.HTTP_200_OK)

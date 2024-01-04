@@ -21,7 +21,8 @@ urlpatterns = [
     path('api/products/<int:pk>/', crud.ProductDetail.as_view(),
          name='product-detail'),
     path('api/fields/', crud.FieldList.as_view(), name='field-list'),
-    path('api/fields/<int:pk>', crud.FieldDetail.as_view(), name='field-detail'),   
+    path('api/fields/<int:pk>', crud.FieldDetail.as_view(), name='field-detail'),
+    path('api/fields/<str:category_name>/', crud.FieldsInCategoryView.as_view(), name='fields-in-category'),   
     path('api/posts/', crud.PostList.as_view(), name='post-list' ),
     path('api/posts/create', crud.PostCreate.as_view(), name='post-create' ),
     path('api/posts/<int:pk>', crud.PostDetail.as_view(), name='post-detail' ),
@@ -30,4 +31,7 @@ urlpatterns = [
     path('api/payment/callback', payment.CallbackView.as_view(), name='callback-order'),
     path('api/payment/query', payment.QueryOrderView.as_view(), name='query-order'),
     path('api/fieldvalues', crud.FieldValueList.as_view(), name='field-values'),
+    path('api/fieldvalues/<int:pk>', crud.FieldValueDetail.as_view(), name='field-values-detail'),
+    path('api/fieldoptions', crud.FieldOptionList.as_view(), name='field-options'),
+    path('api/fieldoptions/<int:pk>', crud.FieldOptionDetail.as_view(), name='field-options-detail')
 ]

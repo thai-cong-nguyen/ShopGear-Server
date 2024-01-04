@@ -47,7 +47,7 @@ class TransactionSerializer(serializers.ModelSerializer):
 class FieldOptionSerializer(serializers.ModelSerializer):
     class Meta:
         model = FieldOption
-        fields = '__all__'
+        fields = ['name']
 
 
 class FieldSerializer(serializers.ModelSerializer):
@@ -56,40 +56,51 @@ class FieldSerializer(serializers.ModelSerializer):
         model = Field 
         fields = '__all__'
         
+class FieldForFieldValueSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Field
+        fields = ['name']
 
 class FieldValueSerializer(serializers.ModelSerializer):
-    # field = FieldSerializer(read_only=True)
+    field = FieldForFieldValueSerializer(read_only=True)
     class Meta:
         model = FieldValue
-        fields = '__all__'
-        read_only_fields = ['product']
+        fields = ['field', 'value']
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        field_representation = representation['field']
+        field_name = field_representation['name']
+        return { 'tag': field_name, 'value': representation['value'] }
         
     def to_internal_value(self, data):
         field_name = data.get('field')
-
-        if field_name:
-            matching_fields = Field.objects.filter(name=field_name)
-
-            if matching_fields.exists():
-                if matching_fields.count() > 1:
-                    raise serializers.ValidationError({"field": ["Multiple fields with name '{}' found.".format(field_name)]})
-
-                field_instance = matching_fields.first()
-                data['field'] = field_instance.pk
-            else:
-                raise serializers.ValidationError({"field": ["Field with name '{}' does not exist.".format(field_name)]})
-
+        category_id = data.get('product').get('category')
+        if category_id and field_name:
+            try:
+                category = Category.objects.get(pk=category_id)
+                field = Field.objects.get(name=field_name, category=category)
+                data['field'] = field.pk
+            except Category.DoesNotExist:
+                raise serializers.ValidationError(f'Category with name "{category_id}" does not exist.')
+            
         return super().to_internal_value(data)
+    
+class FieldCategorySerializer(serializers.ModelSerializer):
+    options = FieldOptionSerializer(many=True, read_only=True)
+    class Meta:
+        model = Field
+        fields = ['name', 'options', 'field_type']
 
 class CategorySerializer(serializers.ModelSerializer):
-    fields = FieldSerializer(many=True, read_only=True)
+    fields = FieldCategorySerializer(many=True, read_only=True)
     class Meta:
         model = Category
-        fields = 'name'
+        fields = ['name', 'fields']
 
 
 class ProductSerializer(serializers.ModelSerializer):
     field_values = FieldValueSerializer(many=True, read_only=True)
+    category = serializers.StringRelatedField()
     class Meta:
         model = Product
         fields = '__all__'
@@ -107,6 +118,7 @@ class ProductSerializer(serializers.ModelSerializer):
 
 class PostSerializer(serializers.ModelSerializer):
     product = ProductSerializer()
+    zone = serializers.CharField(source='get_zone_display')
     class Meta:
         model = Post
         fields = '__all__'
@@ -118,14 +130,12 @@ class PostAndProductSerializer(serializers.Serializer):
 
     # user-defined fields
     user = serializers.HiddenField(default=serializers.CurrentUserDefault())
-
     # post fields
     post_description = serializers.CharField()
     post_zone = serializers.CharField()
 
     def create(self, validated_data):
         user = validated_data.pop('user')
-
         # Xử lý dữ liệu và tạo Product
         product_data = validated_data['product']
         product_data['user'] = user
@@ -138,11 +148,7 @@ class PostAndProductSerializer(serializers.Serializer):
         fields_data = validated_data['fields']
         for field_data in fields_data:
             # Convert field names to primary keys
-            field_name = field_data.get('field')
-            try:
-                field = Field.objects.get(name=field_name)
-            except Field.DoesNotExist:
-                raise serializers.ValidationError(field_name)
+            field = Field.objects.get(pk=field_data['field'])
             field_data['field'] = field
             field_data['product'] = product
 
