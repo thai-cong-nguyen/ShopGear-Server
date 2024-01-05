@@ -157,10 +157,8 @@ class PostDetail(generics.RetrieveUpdateDestroyAPIView):
             raise serializers.ValidationError({'error': 'Token has expired'})
         except jwt.InvalidTokenError:
             raise serializers.ValidationError({'error': 'Invalid token'})
-
-
-
-
+        
+        
 class CategoryList(generics.ListCreateAPIView):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
@@ -209,3 +207,11 @@ class FieldsInCategoryView(APIView):
 class AttachmentList(generics.ListCreateAPIView):
     queryset = Attachment.objects.all()
     serializer_class = AttachmentSerializer
+
+class OrderList(generics.ListCreateAPIView):
+    queryset = Order.objects.all()
+    serializer_class = OrderSerializer
+
+class OrderDetail(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Order.objects.all()
+    serializer_class = OrderSerializer

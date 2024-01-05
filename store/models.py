@@ -112,17 +112,17 @@ class Order(models.Model):
     status = models.IntegerField(
         choices=Status.choices, default=Status.PENDING)
     def __str__(self):
-        return self.product + ' _ ' + self.full_name + ' - ' + self.phone_number + ' - ' + self.ward + ' - ' + self.district + ' - ' + self.province
+        return self.full_name + ' - ' + self.phone_number + ' - ' + self.ward + ' - ' + self.district + ' - ' + self.province
 
 class OrderItem(models.Model):
     order= models.ForeignKey(
-        Order, on_delete=models.CASCADE, null=False, default=None)
+        Order, on_delete=models.CASCADE, null=False, default=None, related_name='items')
     product = models.ForeignKey(
         Product, on_delete=models.CASCADE, null=False, default=None)
     quantity = models.PositiveIntegerField(default=1)
 
     def __str__(self):
-        return self.product + ' - ' + self.quantity
+        return self.product.name + ' - ' + str(self.quantity)
 
 
 class Cart(models.Model):
