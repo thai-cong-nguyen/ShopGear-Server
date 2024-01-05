@@ -255,6 +255,9 @@ class LoginSerializer(serializers.ModelSerializer):
         if not token:
                 raise Exception("Invalid refresh token")
         data['token'] = token
+        user_serializer = UserSerializer(instance=user)
+        data['user'] = user_serializer.data
+        
         return data
     class Meta:
         model = User
