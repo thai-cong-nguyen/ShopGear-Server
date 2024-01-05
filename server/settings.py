@@ -53,6 +53,12 @@ REST_FRAMEWORK = {
     'JSON_UNDERSCOREIZE': {
         'no_underscore_before_number': True,
     },
+        'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ),
+    # Filtering
+    'SEARCH_PARAM': 'q',
+    'ORDERING_PARAM': 'ordering',
 }
 
 INSTALLED_APPS = [
@@ -69,14 +75,6 @@ INSTALLED_APPS = [
     'corsheaders',
 ]
 
-REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
-    ),
-    # Filtering
-    'SEARCH_PARAM': 'q',
-    'ORDERING_PARAM': 'ordering',
-}
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',

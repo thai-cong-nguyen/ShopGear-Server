@@ -1,3 +1,4 @@
+from email.policy import default
 from django.db import models
 import datetime
 # Categories of Products
@@ -57,12 +58,13 @@ class Product(models.Model):
         User, on_delete=models.CASCADE, null=False, default=None, related_name='products')
     category = models.ForeignKey(
         Category, on_delete=models.CASCADE, null=False, default=None)
-    name = models.CharField(max_length=100)
+    name = models.CharField(max_length=255)
     description = models.CharField(
         max_length=250, default='', blank=True, null=True)
     price = models.DecimalField(default=0, decimal_places=0, max_digits=9)
     # True: còn hàng; False: đã bán
     is_available = models.BooleanField(default=False)
+    amount = models.PositiveIntegerField(default=1)
     def __str__(self):
         return self.name
     
@@ -78,7 +80,7 @@ class Attachment(models.Model):
         PHOTO = "Photo", _("Photo")
         VIDEO = "Video", _("Video")
 
-    file = models.CharField(max_length=255, verbose_name="Attachment URL")
+    file = models.CharField(max_length=None, verbose_name="Attachment URL")
     file_type = models.CharField('File type', choices=AttachmentType.choices, max_length=10)
 
     publication = models.ForeignKey(Product, on_delete=models.CASCADE, verbose_name='Model that uses the image field', related_name='attachments', null=False, default=None)
@@ -90,15 +92,18 @@ class Attachment(models.Model):
         verbose_name_plural = 'Attachments'
 
 class Order(models.Model):
-    user = models.ForeignKey(
-        User, on_delete=models.CASCADE, null=False, default=None)
     total_price = models.IntegerField(default=0)
-    address = models.CharField(max_length=100, default='', blank=True)
-    phone = models.CharField(max_length=20, default='', blank=True)
-    date = models.DateField(default=datetime.datetime.today)
+    ward = models.CharField(max_length=255, default='', blank=True)
+    district = models.CharField(max_length=255, default='', blank=True)
+    province = models.CharField(max_length=255, default='', blank=True)
+    discount_code = models.CharField(max_length=255, default='', blank=True)
+    phone_number = models.CharField(max_length=20, default='', blank=True)
+    full_name = models.CharField(max_length=255, default='', blank=True)
+    created_at = models.DateTimeField(default=datetime.datetime.now())
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return self.product
+        return self.product + ' _ ' + self.full_name + ' - ' + self.phone_number + ' - ' + self.ward + ' - ' + self.district + ' - ' + self.province
 
 
 class OrderItem(models.Model):
@@ -109,7 +114,7 @@ class OrderItem(models.Model):
     quantity = models.PositiveIntegerField(default=1)
 
     def __str__(self):
-        return self.product
+        return self.product + ' - ' + self.quantity
 
 
 class Cart(models.Model):
