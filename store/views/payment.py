@@ -39,7 +39,7 @@ class CreateOrderView(APIView):
                 }
                 serializer = OrderSerializer(data=orderdata)
                 serializer.is_valid(raise_exception=True)
-                createOrder = serializer.create(validated_data=serializer.validated_data)
+                createOrder = serializer.create(validated_data=serializer.validated_data, items=data.get("items"))
                 config = {
                 "app_id": 2553,
                 "key1": "PcY4iZIKFCIdgZvA6ueMcMHHUbRLYjPL",
@@ -97,7 +97,6 @@ class CallbackView(APIView):
                 # thanh toán thành công
                 # merchant cập nhật trạng thái cho đơn hàng
                 dataJson = json.loads(cbdata['data'])
-                print(dataJson)
                 if dataJson.get('embeddata'):
                     orderdata = {"status": 3}
                     instance = Order.objects.get(pk=dataJson.get('embeddata'))
@@ -124,13 +123,15 @@ class QueryOrderView(APIView):
     def post(self, request):
         try:
             data =request.data
-            
+            order_id = data.get('order_id')
             config = {
                 "app_id": 2553,
                 "key1": "PcY4iZIKFCIdgZvA6ueMcMHHUbRLYjPL",
                 "key2": "kLtgPl8HHhfvMuDHPwKfgfsY4Ydm9eIz",
                 "endpoint": "https://sb-openapi.zalopay.vn/v2/query"
             }
+            
+            
             params = {
                 "app_id": config["app_id"],
                 "app_trans_id": data.get("app_trans_id")  # Input your app_trans_id"
@@ -141,7 +142,9 @@ class QueryOrderView(APIView):
 
             response = urllib.request.urlopen(url=config["endpoint"], data=urllib.parse.urlencode(params).encode())
             result = json.loads(response.read())
-            
+            instance = Order.objects.get(pk=order_id)
+            order_serializer = OrderSerializer(instance=instance)
+            result['items'] = order_serializer.data.get('items')
             if result['return_code'] == 2:
                 return Response({"status": status.HTTP_200_OK, "message": "Order is Failed", "data":result},status=status.HTTP_400_BAD_REQUEST)
             elif result['return_code'] == 3:
