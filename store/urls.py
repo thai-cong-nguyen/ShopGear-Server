@@ -34,5 +34,7 @@ urlpatterns = [
     path('api/fieldvalues/<int:pk>', crud.FieldValueDetail.as_view(), name='field-values-detail'),
     path('api/fieldoptions', crud.FieldOptionList.as_view(), name='field-options'),
     path('api/fieldoptions/<int:pk>', crud.FieldOptionDetail.as_view(), name='field-options-detail'),
-    path("api/attachments/", crud.AttachmentList.as_view(), name='attachments')
+    path("api/attachments/", crud.AttachmentList.as_view(), name='attachments'),
+    path('api/orders/', crud.OrderList.as_view(), name='order-list'),
+    path('api/orders/<int:pk>', crud.OrderDetail.as_view(), name='order-list'),
 ]
