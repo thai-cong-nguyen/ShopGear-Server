@@ -320,8 +320,8 @@ class OrderSerializer(serializers.ModelSerializer):
     class Meta:
         model = Order
         fields = '__all__'
-    def create(self, validated_data):
-        items_data = validated_data.pop('items', [])
+    def create(self, validated_data, items):
+        items_data = items
         order = Order.objects.create(**validated_data)
         for item_data in items_data:
             OrderItem.objects.create(order=order, **item_data)
