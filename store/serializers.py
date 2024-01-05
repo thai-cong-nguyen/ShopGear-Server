@@ -8,7 +8,7 @@ from rest_framework_simplejwt.exceptions import TokenError
 from .utils.generate_token import get_tokens_for_user
 from django.contrib.auth import authenticate
 from django.db.models import Q
-
+from datetime import datetime
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
@@ -134,6 +134,15 @@ class PostSerializer(serializers.ModelSerializer):
     class Meta:
         model = Post
         fields = '__all__'
+    def to_representation(self, instance):
+        representaion = super().to_representation(instance)
+        created_at = datetime.strptime(representaion['created_at'], "%Y-%m-%dT%H:%M:%S.%fZ")
+        updated_at = datetime.strptime(representaion['updated_at'], "%Y-%m-%dT%H:%M:%S.%fZ")
+        created_at = created_at.date()
+        updated_at = updated_at.date()
+        representaion['created_at'] = created_at.isoformat()
+        representaion['updated_at'] = updated_at.isoformat()
+        return representaion
 
 class PostAndProductSerializer(serializers.Serializer):
     # all fields of a product 
