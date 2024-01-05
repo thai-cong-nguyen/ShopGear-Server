@@ -21,18 +21,6 @@ class UsernameSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         rep = super().to_representation(instance)
         return rep['first_name'] + ' ' + rep['last_name']
-    
-class OrderSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Order
-        fields = ['id', 'user', 'total_price', 'addresses', 'phone', 'date']
-
-
-class OrderItemSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = OrderItem
-        fields = ['id', 'order', 'product', 'quantiy']
-
 
 class CartSerializer(serializers.ModelSerializer):
     class Meta:
@@ -333,8 +321,13 @@ class OrderSerializer(serializers.ModelSerializer):
         model = Order
         fields = '__all__'
     def create(self, validated_data):
-        items_data = validated_data.pop('items')
+        items_data = validated_data.pop('items', [])
         order = Order.objects.create(**validated_data)
         for item_data in items_data:
             OrderItem.objects.create(order=order, **item_data)
         return order
+    def update(self, instance, validated_data):
+        instance.status = validated_data.pop('status')
+        instance.save()
+        return instance
+        

@@ -1,7 +1,8 @@
+from locale import atoi
 from django.shortcuts import render
 from ..models import Category, User, Product, Order, OrderItem, Cart, CartItem, Transaction, Post
-
-from ..serializers import LoginSerializer, UserSerializer, RegistrationSerializer, ResetTokenSerializer
+from django.db import transaction
+from ..serializers import OrderSerializer, OrderItemSerializer
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status, mixins, generics
@@ -18,66 +19,97 @@ import json, hmac, hashlib, urllib.request, urllib.parse, random
     
 class CreateOrderView(APIView):
     def post(self, request):
+        data = request.data
         try:
-            data = request.data
             print("Create payment order")
-            config = {
+            with transaction.atomic():
+                # create Order 
+                print("Transaction")
+                orderdata = {
+                    "user": data.get("user"),
+                    "total_price": data.get("total_price"),
+                    "ward": data.get("ward"),
+                    "district": data.get("district"),
+                    "province": data.get("province"),
+                    "discount_code": data.get("discount_code") if data.get("discount_code") else "",
+                    "phone_number": data.get("phone_number"),
+                    "full_name": data.get("full_name"),
+                    "items": data.get("items")
+                }
+                serializer = OrderSerializer(data=orderdata)
+                serializer.is_valid(raise_exception=True)
+                createOrder = serializer.create(validated_data=serializer.validated_data)
+                
+                config = {
                 "app_id": 2553,
                 "key1": "PcY4iZIKFCIdgZvA6ueMcMHHUbRLYjPL",
                 "key2": "kLtgPl8HHhfvMuDHPwKfgfsY4Ydm9eIz",
                 "endpoint": "https://sb-openapi.zalopay.vn/v2/create"
-            }
-            transID = random.randrange(1000000)
-            print(random.randrange(1000000))
-            order = {
-                "app_id": config["app_id"],
-                "app_trans_id": "{:%y%m%d}_{}".format(datetime.today(), transID), # mã giao dich có định dạng yyMMdd_xxxx
-                "app_user": "user123",
-                "app_time": int(round(time() * 1000)), # miliseconds
-                "embed_data": json.dumps({}),
-                "item": json.dumps([{}]),
-                "amount": data.get("amount"),
-                "description": "ShopGear - Payment for the order #"+str(transID),
-                "bank_code": "zalopayapp",
-                "callback_url": "api-shopgear.onrender.com/api/payment/callback"
-            }
+                }
+                transID = random.randrange(1000000)
+                print(random.randrange(1000000))
+                order = {
+                    "app_id": config["app_id"],
+                    "app_trans_id": "{:%y%m%d}_{}".format(datetime.today(), transID), # mã giao dich có định dạng yyMMdd_xxxx
+                    "app_user": "user123",
+                    "app_time": int(round(time() * 1000)), # miliseconds
+                    "embed_data": json.dumps({"order": createOrder.id}),
+                    "item": json.dumps([{}]),
+                    "amount": data.get("total_price"),
+                    "description": "ShopGear - Payment for the order #"+str(transID),
+                    "bank_code": "zalopayapp",
+                    "callback_url": "api-shopgear.onrender.com/api/payment/callback"
+                }
 
-            # app_id|app_trans_id|app_user|amount|apptime|embed_data|item
-            data = "{}|{}|{}|{}|{}|{}|{}".format(order["app_id"], order["app_trans_id"], order["app_user"],  order["amount"], order["app_time"], order["embed_data"], order["item"])
-            order["mac"] = hmac.new(config['key1'].encode(), data.encode(), hashlib.sha256).hexdigest()
-            response = urllib.request.urlopen(url=config["endpoint"], data=urllib.parse.urlencode(order).encode())
-            result = json.loads(response.read())
-            result["app_trans_id"] = order['app_trans_id']
-            if (result['return_code'] != 1):
-                return Response({"status": status.HTTP_400_BAD_REQUEST, "message": "Create Payment Order Failed", "data": result}, status=status.HTTP_400_BAD_REQUEST)
-            return Response({"status": status.HTTP_200_OK, "message": "Create Payment Order Successfully", "data": result}, status=status.HTTP_200_OK)
+                # app_id|app_trans_id|app_user|amount|apptime|embed_data|item
+                data = "{}|{}|{}|{}|{}|{}|{}".format(order["app_id"], order["app_trans_id"], order["app_user"],  order["amount"], order["app_time"], order["embed_data"], order["item"])
+                order["mac"] = hmac.new(config['key1'].encode(), data.encode(), hashlib.sha256).hexdigest()
+                response = urllib.request.urlopen(url=config["endpoint"], data=urllib.parse.urlencode(order).encode())
+                result = json.loads(response.read())
+                result["app_trans_id"] = order['app_trans_id']
+                result["order_id"] = createOrder.id
+                if (result['return_code'] != 1):
+                    return Response({"status": status.HTTP_400_BAD_REQUEST, "message": "Create Payment Order Failed", "data": result}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
-            print(e)
-            return Response({"status": status.HTTP_400_BAD_REQUEST, "message": "Something went wrong", "data": {}},status=status.HTTP_400_BAD_REQUEST)
+            print(str(e))
+            return Response({"status": status.HTTP_400_BAD_REQUEST, "message": "Something went wrong", "error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"status": status.HTTP_200_OK, "message": "Create Payment Order Successfully", "data": result}, status=status.HTTP_200_OK)
         
 class CallbackView(APIView):
     def post(self, request):
         result = {}
+        data = request.data
         try:
             print("Call back when payment success")
-            config = {
-                'key2': 'eG4r0GcoNtRGbO8'
-            }
-            cbdata = request.data
-            mac = hmac.new(config['key2'].encode(), cbdata['data'].encode(), hashlib.sha256).hexdigest()
-            # kiểm tra callback hợp lệ (đến từ ZaloPay server)
-            if mac != cbdata['mac']:
-                # callback không hợp lệ
-                result['return_code'] = -1
-                result['return_message'] = 'invalid callback'
-            else:
-                # thanh toán thành công
-                # merchant cập nhật trạng thái cho đơn hàng
-                dataJson = json.loads(cbdata['data'])
-                print("update order's status = success where app_trans_id = " + dataJson['app_trans_id'])
 
-            result['return_code'] = 1
-            result['return_message'] = 'success'
+            with transaction.atomic():
+                embed_data = data.get('embed_data')
+                print(embed_data)
+                if embed_data:
+                    orderdata = {"status": 3}
+                    instance = Order.objects.get(pk=embed_data.get("order"))
+                    serializer = OrderSerializer(instance=instance, data=orderdata)
+                    serializer.is_valid(raise_exception=True)
+                    serializer.update(instance=instance,validated_data=serializer.validated_data)
+                
+                config = {
+                    'key2': 'eG4r0GcoNtRGbO8'
+                }
+                cbdata = {key: value for key, value in data.items() if key != "order"}
+                mac = hmac.new(config['key2'].encode(), cbdata['data'].encode(), hashlib.sha256).hexdigest()
+                # kiểm tra callback hợp lệ (đến từ ZaloPay server)
+                if mac != cbdata['mac']:
+                    # callback không hợp lệ
+                    result['return_code'] = -1
+                    result['return_message'] = 'invalid callback'
+                else:
+                    # thanh toán thành công
+                    # merchant cập nhật trạng thái cho đơn hàng
+                    dataJson = json.loads(cbdata['data'])
+                    print("update order's status = success where app_trans_id = " + dataJson['app_trans_id'])
+
+                result['return_code'] = 1
+                result['return_message'] = 'success'
         except Exception as e:
             print(e)
             result['return_code'] = 0 # ZaloPay server sẽ callback lại (tối đa 3 lần)
@@ -121,36 +153,13 @@ class QueryOrderView(APIView):
             print(e)
             return Response({"status": status.HTTP_400_BAD_REQUEST, "message": "Something went wrong", "data": e},status=status.HTTP_400_BAD_REQUEST)
 
-class RefundView(APIView):
-    def post(self, request):
+class CancelOrderView(APIView):
+    def delete(self, request):
+        data = request.data
         try:
-            config = {
-                "app_id": 2553,
-                "key1": "PcY4iZIKFCIdgZvA6ueMcMHHUbRLYjPL",
-                "key2": "kLtgPl8HHhfvMuDHPwKfgfsY4Ydm9eIz",
-                "refund_url": "https://sb-openapi.zalopay.vn/v2/refund"
-            }
-
-            timestamp = int(round(time() * 1000)) # miliseconds
-            uid =  "{}{}".format(timestamp, random.randint(111, 999)) # unique id
-
-            order = {
-            "app_id": config["app_id"],
-            "m_refund_id": "{:%y%m%d}_{}_{}".format(datetime.today(), config["app_id"], uid),
-            "timestamp": timestamp,
-            "zp_trans_id": 123456789,
-            "amount": 1000,
-            "description": "ZaloPay Integration Demo",
-            }
-
-            # appid|zptransid|amount|description|timestamp
-            data = "{}|{}|{}|{}|{}".format(order["m_refund_id"], order["zp_trans_id"], order["amount"], order["description"], order["timestamp"])
-            order["mac"] = hmac.new(config['key1'].encode(), data.encode(), hashlib.sha256).hexdigest()
-
-            response = urllib.request.urlopen(url=config["refund_url"], data=urllib.parse.urlencode(order).encode())
-            result = json.loads(response.read())
-
-            for k, v in result.items():
-                print("{}: {}".format(k, v))
+            instance = Order.objects.get(pk=data.get('order'))
+            instance.delete()
         except Exception as e:
-            print(e);
+            print(str(e))
+            return Response({"status": status.HTTP_400_BAD_REQUEST, "message": "Something went wrong", "error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"status": status.HTTP_200_OK, "message": "Cancel Order Successfully", "data": ""}, status=status.HTTP_200_OK)

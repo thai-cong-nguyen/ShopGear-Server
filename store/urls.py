@@ -30,6 +30,7 @@ urlpatterns = [
     path('api/payment/create-order', payment.CreateOrderView.as_view(), name='create-payment-order'),
     path('api/payment/callback', payment.CallbackView.as_view(), name='callback-order'),
     path('api/payment/query', payment.QueryOrderView.as_view(), name='query-order'),
+    path('api/payment/cancel', payment.CancelOrderView.as_view(), name='cancel-order'),
     path('api/fieldvalues', crud.FieldValueList.as_view(), name='field-values'),
     path('api/fieldvalues/<int:pk>', crud.FieldValueDetail.as_view(), name='field-values-detail'),
     path('api/fieldoptions', crud.FieldOptionList.as_view(), name='field-options'),
