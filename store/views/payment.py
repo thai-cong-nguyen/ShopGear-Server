@@ -47,18 +47,17 @@ class CreateOrderView(APIView):
                 "endpoint": "https://sb-openapi.zalopay.vn/v2/create"
                 }
                 transID = random.randrange(1000000)
-                print(random.randrange(1000000))
                 order = {
                     "app_id": config["app_id"],
                     "app_trans_id": "{:%y%m%d}_{}".format(datetime.today(), transID), # mã giao dich có định dạng yyMMdd_xxxx
                     "app_user": "user123",
                     "app_time": int(round(time() * 1000)), # miliseconds
-                    "embed_data": json.dumps({"order": createOrder.id}),
+                    "embed_data": json.dumps({"order": createOrder.id, "redirecturl": "localhost:5173/order/result", "app_trans_id": order['app_trans_id']}),
                     "item": json.dumps([{}]),
                     "amount": data.get("total_price"),
                     "description": "ShopGear - Payment for the order #"+str(transID),
                     "bank_code": "zalopayapp",
-                    "callback_url": "api-shopgear.onrender.com/api/payment/callback"
+                    "callback_url": "https://api-shopgear.onrender.com/api/payment/callback"
                 }
 
                 # app_id|app_trans_id|app_user|amount|apptime|embed_data|item
@@ -81,35 +80,33 @@ class CallbackView(APIView):
         data = request.data
         try:
             print("Call back when payment success")
-
-            with transaction.atomic():
-                embed_data = data.get('embed_data')
-                print(embed_data)
-                if embed_data:
+            
+            config = {
+                'key2': 'eG4r0GcoNtRGbO8'
+            }
+            cbdata = request.data
+            # {key: value for key, value in data.items() if key != "order"}
+            mac = hmac.new(config['key2'].encode(), cbdata['data'].encode(), hashlib.sha256).hexdigest()
+            # kiểm tra callback hợp lệ (đến từ ZaloPay server)
+            if mac != cbdata['mac']:
+                # callback không hợp lệ
+                result['return_code'] = -1
+                result['return_message'] = 'invalid callback'
+            else:
+                # thanh toán thành công
+                # merchant cập nhật trạng thái cho đơn hàng
+                dataJson = json.loads(cbdata['data'])
+                print(dataJson)
+                if dataJson.get('embeddata'):
                     orderdata = {"status": 3}
-                    instance = Order.objects.get(pk=embed_data.get("order"))
+                    instance = Order.objects.get(pk=dataJson.get('embeddata'))
                     serializer = OrderSerializer(instance=instance, data=orderdata)
                     serializer.is_valid(raise_exception=True)
                     serializer.update(instance=instance,validated_data=serializer.validated_data)
-                
-                config = {
-                    'key2': 'eG4r0GcoNtRGbO8'
-                }
-                cbdata = {key: value for key, value in data.items() if key != "order"}
-                mac = hmac.new(config['key2'].encode(), cbdata['data'].encode(), hashlib.sha256).hexdigest()
-                # kiểm tra callback hợp lệ (đến từ ZaloPay server)
-                if mac != cbdata['mac']:
-                    # callback không hợp lệ
-                    result['return_code'] = -1
-                    result['return_message'] = 'invalid callback'
-                else:
-                    # thanh toán thành công
-                    # merchant cập nhật trạng thái cho đơn hàng
-                    dataJson = json.loads(cbdata['data'])
-                    print("update order's status = success where app_trans_id = " + dataJson['app_trans_id'])
+                print("update order's status = success where app_trans_id = " + dataJson['app_trans_id'])
 
-                result['return_code'] = 1
-                result['return_message'] = 'success'
+            result['return_code'] = 1
+            result['return_message'] = 'success'
         except Exception as e:
             print(e)
             result['return_code'] = 0 # ZaloPay server sẽ callback lại (tối đa 3 lần)
