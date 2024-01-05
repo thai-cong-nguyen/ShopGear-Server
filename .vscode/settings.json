@@ -3,7 +3,7 @@
     "editor.defaultFormatter": "ms-python.autopep8"
   },
   "python.formatting.provider": "none",
-  "cSpell.words": [
-    "dotenv"
-  ]
+  "cSpell.words": ["dotenv"],
+  "python.analysis.autoImportCompletions": true,
+  "python.analysis.typeCheckingMode": "off"
 }

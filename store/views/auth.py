@@ -21,11 +21,11 @@ class LoginView(APIView):
                 raise Exception("Invalid username or email")
             if not data.get('password'):
                 raise Exception("Password is required")
-            
             serializer = LoginSerializer(data = data)
             serializer.is_valid(raise_exception=True)
             token = serializer.validated_data['token']
-            return Response({"status": status.HTTP_200_OK, "message": "Login Successfully", "data": token})
+            user = serializer.validated_data['user']
+            return Response({"status": status.HTTP_200_OK, "message": "Login Successfully", "data": { **token, "user": user}})
         except serializers.ValidationError as e:
             error_message = e.detail.get('non_field_errors', [])[0]
             print(error_message)
