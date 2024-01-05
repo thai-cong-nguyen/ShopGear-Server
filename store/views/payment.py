@@ -1,4 +1,5 @@
 from locale import atoi
+from venv import create
 from django.shortcuts import render
 from ..models import Category, User, Product, Order, OrderItem, Cart, CartItem, Transaction, Post
 from django.db import transaction
@@ -39,7 +40,6 @@ class CreateOrderView(APIView):
                 serializer = OrderSerializer(data=orderdata)
                 serializer.is_valid(raise_exception=True)
                 createOrder = serializer.create(validated_data=serializer.validated_data)
-                
                 config = {
                 "app_id": 2553,
                 "key1": "PcY4iZIKFCIdgZvA6ueMcMHHUbRLYjPL",
@@ -47,12 +47,13 @@ class CreateOrderView(APIView):
                 "endpoint": "https://sb-openapi.zalopay.vn/v2/create"
                 }
                 transID = random.randrange(1000000)
+                app_trans_id = "{:%y%m%d}_{}".format(datetime.today(), transID)
                 order = {
                     "app_id": config["app_id"],
-                    "app_trans_id": "{:%y%m%d}_{}".format(datetime.today(), transID), # mã giao dich có định dạng yyMMdd_xxxx
+                    "app_trans_id": app_trans_id, # mã giao dich có định dạng yyMMdd_xxxx
                     "app_user": "user123",
                     "app_time": int(round(time() * 1000)), # miliseconds
-                    "embed_data": json.dumps({"order": createOrder.id, "redirecturl": "localhost:5173/order/result", "app_trans_id": order['app_trans_id']}),
+                    "embed_data": json.dumps({"order": createOrder.id, "redirecturl": "localhost:5173/order/result", "app_trans_id": app_trans_id}),
                     "item": json.dumps([{}]),
                     "amount": data.get("total_price"),
                     "description": "ShopGear - Payment for the order #"+str(transID),
