@@ -1,5 +1,6 @@
+from h11 import Response
 from . models import Category, User, Product, Order, OrderItem, Cart, CartItem, Transaction, Post, Field, FieldOption, FieldValue, Attachment
-from rest_framework import serializers, routers
+from rest_framework import serializers, routers, status
 from rest_framework.validators import UniqueTogetherValidator
 from rest_framework_simplejwt.tokens import RefreshToken, UntypedToken
 from rest_framework_simplejwt.exceptions import TokenError
@@ -83,7 +84,7 @@ class FieldValueSerializer(serializers.ModelSerializer):
                 field = Field.objects.get(name=field_name, category=category)
                 data['field'] = field.pk
             except Category.DoesNotExist:
-                raise serializers.ValidationError(f'Category with name "{category_id}" does not exist.')
+                return Response({"error": (f'Category with name "{category_id}" does not exist.'), "status": 400}) 
             
         return super().to_internal_value(data)
     
@@ -126,7 +127,7 @@ class ProductSerializer(serializers.ModelSerializer):
                 category = Category.objects.get(name=category_name)
                 data['category'] = category.pk
             except Category.DoesNotExist:
-                raise serializers.ValidationError(f'Category with name "{category_name}" does not exist.')
+                return Response({"status": (f'Category with name "{category_name}" does not exist.'), "error": 400}) 
 
         return super().to_internal_value(data)
     
@@ -157,45 +158,59 @@ class PostAndProductSerializer(serializers.Serializer):
     post_zone = serializers.CharField(write_only=True)
     attachments = AttachmentSerializer(required=False, many=True)
     def create(self, validated_data):
-        user = validated_data.pop('user')
-        # Xử lý dữ liệu và tạo Product
-        product_data = validated_data['product']
-        product_data['user'] = user
-        category_name = product_data['category']
-        category = Category.objects.get(name=category_name)
-        product_data['category'] = category
-        product = Product.objects.create(**product_data)
+        try:
+            user = validated_data.pop('user')
+            # Xử lý dữ liệu và tạo Product
+            product_data = validated_data['product']
+            product_data['user'] = user
+            category_name = product_data['category']
+            category = Category.objects.get(name=category_name)
+            product_data['category'] = category
+            product = Product.objects.create(**product_data)
 
-        # Thêm fields liên kết với product 
-        fields_data = validated_data['fields']
-        
-        # attachment data 
-        attachments_data = validated_data['attachments']
-        
-        for field_data in fields_data:
-            # Convert field names to primary keys
-            field = Field.objects.get(pk=field_data['field'])
-            field_data['field'] = field
-            field_data['product'] = product
-
-            # Tạo FieldValue với primary keys đã được chuyển đổi
-            FieldValue.objects.create(**field_data)
-        
-        # Lưu attachment 
-        for attachment in attachments_data:
-            attachment['publication'] = product 
-            Attachment.objects.create(**attachment)
+            # Thêm fields liên kết với product 
+            fields_data = validated_data['fields']
             
-        # Tạo Post
-        post_data = {
-            'user': user,
-            'product': product,
-            'description': validated_data['post_description'],
-            'zone': validated_data['post_zone'],
-        }
-        post = Post.objects.create(**post_data)
-        post_serializer = PostSerializer(post)
-        return post_serializer.data
+            # attachment data 
+            attachments_data = validated_data['attachments']
+            
+            for field_data in fields_data:
+                # Convert field names to primary keys
+                field = Field.objects.get(pk=field_data['field'])
+                field_data['field'] = field
+                field_data['product'] = product
+
+                # Tạo FieldValue với primary keys đã được chuyển đổi
+                try: 
+                    FieldValue.objects.create(**field_data)
+                except FieldValue.DoesNotExist:
+                    return Response({'status': 400, 'message': 'FieldValue does not exist'}, status=status.HTTP_400_BAD_REQUEST)
+            
+            # Lưu attachment 
+            for attachment in attachments_data:
+                try:
+                    attachment['publication'] = product 
+                    Attachment.objects.create(**attachment)
+                except Exception as e:
+                    raise serializers.ValidationError(e)
+                
+            # Tạo Post
+            post_data = {
+                'user': user,
+                'product': product,
+                'description': validated_data['post_description'],
+                'zone': validated_data['post_zone'],
+            }
+            post = Post.objects.create(**post_data)
+            post_serializer = PostSerializer(post)
+            return post_serializer.data
+        
+        except KeyError as e:
+            raise serializers.ValidationError({"status": 400, "error": f"The field {e} is missing."})
+        except Category.DoesNotExist:
+            raise serializers.ValidationError({"status": 400, "error": "The specified category does not exist."})
+        except Exception as e:
+            raise serializers.ValidationError({'status': 400, 'error': str(e)})
     
     def update(self, instance, validated_data):
         # Logic cập nhật bài đăng
@@ -223,8 +238,6 @@ class PostAndProductSerializer(serializers.Serializer):
                 attachment.file_type = attachment_data['file_type']
                 attachment.file = attachment_data['file']
                 attachment.save()
-            
-            
             
         # Cập nhật các trường khác 
         instance.description = validated_data['post_description']

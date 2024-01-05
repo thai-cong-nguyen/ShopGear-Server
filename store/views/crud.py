@@ -1,3 +1,4 @@
+from multiprocessing import Value
 from django.shortcuts import render
 from ..models import Category, User, Product, Order, OrderItem, Cart, CartItem, Transaction, Post, Field, FieldValue, FieldOption, Attachment
 
@@ -93,7 +94,6 @@ class PostCreate(generics.CreateAPIView):
         product_data = request.data.get('product')
         fields_data = [{'product': product_data, **field_data} for field_data in fields_data]
         request.data['fields'] = fields_data 
-        
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = self.validate_user(request)
