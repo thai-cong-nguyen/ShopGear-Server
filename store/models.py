@@ -90,7 +90,15 @@ class Attachment(models.Model):
     class Meta:
         verbose_name = 'Attachment'
         verbose_name_plural = 'Attachments'
-
+        
+class Status(models.IntegerChoices):
+        PENDING = 1, 'Đang chờ xác nhận'
+        UNPAID = 2, ' Chưa thanh toán'
+        PAID = 3, 'Đã thanh toán'
+        IN_TRANSIT = 4, 'Đang vận chuyển'
+        DELIVERED = 5, 'Đã giao hàng'
+        CANCELLED = 0, 'Đã huỷ'
+        
 class Order(models.Model):
     total_price = models.IntegerField(default=0)
     ward = models.CharField(max_length=255, default='', blank=True)
@@ -101,10 +109,10 @@ class Order(models.Model):
     full_name = models.CharField(max_length=255, default='', blank=True)
     created_at = models.DateTimeField(default=datetime.datetime.now())
     updated_at = models.DateTimeField(auto_now=True)
-
+    status = models.IntegerField(
+        choices=Status.choices, default=Status.PENDING)
     def __str__(self):
         return self.product + ' _ ' + self.full_name + ' - ' + self.phone_number + ' - ' + self.ward + ' - ' + self.district + ' - ' + self.province
-
 
 class OrderItem(models.Model):
     order= models.ForeignKey(
@@ -134,21 +142,12 @@ class CartItem(models.Model):
     def __str__(self):
         return self.product
 
-
 class Transaction(models.Model):
     buyer = models.ForeignKey(
         User, related_name='buyer_transactions', on_delete=models.CASCADE, null=False, default=None)
     seller = models.ForeignKey(
         User, related_name='seller_transactions', on_delete=models.CASCADE, null=False, default=None)
     total_price = models.IntegerField(default=0)
-
-    class Status(models.IntegerChoices):
-        PENDING = 1, 'PENDING'
-        UNPAID = 2, ' UNPAID'
-        PAID = 3, 'PAID'
-        IN_TRANSIT = 4, 'IN_TRANSIT'
-        DELIVERED = 5, 'DELIVERED'
-        CANCELLED = 0, 'CANCELLED'
 
     status = models.IntegerField(
         choices=Status.choices, default=Status.PENDING)
