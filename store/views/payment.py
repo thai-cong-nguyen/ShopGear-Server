@@ -53,7 +53,7 @@ class CreateOrderView(APIView):
                     "app_trans_id": app_trans_id, # mã giao dich có định dạng yyMMdd_xxxx
                     "app_user": "user123",
                     "app_time": int(round(time() * 1000)), # miliseconds
-                    "embed_data": json.dumps({"order": createOrder.id, "redirecturl": f"http://localhost:5173/order/result/{app_trans_id}"}),
+                    "embed_data": json.dumps({"order": createOrder.id, "redirecturl": f"https://shogear.vercel.app/order/result/{app_trans_id}"}),
                     # f"https://shogear.vercel.app/order/result/{app_trans_id}"
                     "item": json.dumps([{}]),
                     "amount": data.get("total_price"),
