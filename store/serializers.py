@@ -13,7 +13,7 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['id', 'username', 'first_name',
-                  'last_name', 'is_admin', 'products', 'posts']
+                  'last_name', 'is_admin', 'products', 'posts', 'phone']
 class UsernameSerializer(serializers.ModelSerializer):
     class Meta:
         model = User

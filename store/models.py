@@ -100,6 +100,7 @@ class Status(models.IntegerChoices):
         CANCELLED = 0, 'Đã huỷ'
         
 class Order(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=False, default=None, related_name='orders')
     total_price = models.IntegerField(default=0)
     ward = models.CharField(max_length=255, default='', blank=True)
     district = models.CharField(max_length=255, default='', blank=True)
@@ -107,7 +108,7 @@ class Order(models.Model):
     discount_code = models.CharField(max_length=255, default='', blank=True)
     phone_number = models.CharField(max_length=20, default='', blank=True)
     full_name = models.CharField(max_length=255, default='', blank=True)
-    created_at = models.DateTimeField(default=datetime.datetime.now())
+    created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     status = models.IntegerField(
         choices=Status.choices, default=Status.PENDING)
