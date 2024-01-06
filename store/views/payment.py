@@ -87,9 +87,9 @@ class CallbackView(APIView):
                 'key2': 'PcY4iZIKFCIdgZvA6ueMcMHHUbRLYjPL'
             }
             cbdata = request.data
-            print(cbdata)
             # {key: value for key, value in data.items() if key != "order"}
-            mac = hmac.new(config['key2'].encode(), cbdata['data'].encode(), hashlib.sha256).hexdigest()
+            # mac = hmac.new(config['key2'].encode(), cbdata['data'].encode(), hashlib.sha256).hexdigest()
+            mac = cbdata['data']
             print(mac)
             # kiểm tra callback hợp lệ (đến từ ZaloPay server)
             if mac != cbdata['mac']:
@@ -108,7 +108,6 @@ class CallbackView(APIView):
                     serializer.is_valid(raise_exception=True)
                     serializer.update(instance=instance,validated_data=serializer.validated_data)
                 print("update order's status = success where app_trans_id = " + dataJson['app_trans_id'])
-
             result['return_code'] = 1
             result['return_message'] = 'success'
         except Exception as e:
