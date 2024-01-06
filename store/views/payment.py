@@ -54,6 +54,7 @@ class CreateOrderView(APIView):
                     "app_user": "user123",
                     "app_time": int(round(time() * 1000)), # miliseconds
                     "embed_data": json.dumps({"order": createOrder.id, "redirecturl": f"http://localhost:5173/order/result/{app_trans_id}"}),
+                    # f"https://shogear.vercel.app/order/result/{app_trans_id}"
                     "item": json.dumps([{}]),
                     "amount": data.get("total_price"),
                     "description": "ShopGear - Payment for the order #"+str(transID),
@@ -81,7 +82,6 @@ class CallbackView(APIView):
         data = request.data
         try:
             print("Call back when payment success")
-            
             config = {
                 'key2': 'eG4r0GcoNtRGbO8'
             }
@@ -97,6 +97,7 @@ class CallbackView(APIView):
                 # thanh toán thành công
                 # merchant cập nhật trạng thái cho đơn hàng
                 dataJson = json.loads(cbdata['data'])
+                print(dataJson)
                 if dataJson.get('embeddata'):
                     orderdata = {"status": 3}
                     instance = Order.objects.get(pk=dataJson['embeddata'].get('order'))
