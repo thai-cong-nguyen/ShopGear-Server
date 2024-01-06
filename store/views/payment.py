@@ -86,6 +86,7 @@ class CallbackView(APIView):
                 'key2': 'eG4r0GcoNtRGbO8'
             }
             cbdata = request.data
+            print(cbdata)
             # {key: value for key, value in data.items() if key != "order"}
             mac = hmac.new(config['key2'].encode(), cbdata['data'].encode(), hashlib.sha256).hexdigest()
             # kiểm tra callback hợp lệ (đến từ ZaloPay server)
