@@ -65,6 +65,7 @@ class CreateOrderView(APIView):
                 # app_id|app_trans_id|app_user|amount|apptime|embed_data|item
                 data = "{}|{}|{}|{}|{}|{}|{}".format(order["app_id"], order["app_trans_id"], order["app_user"],  order["amount"], order["app_time"], order["embed_data"], order["item"])
                 order["mac"] = hmac.new(config['key1'].encode(), data.encode(), hashlib.sha256).hexdigest()
+                print(order['mac'])
                 response = urllib.request.urlopen(url=config["endpoint"], data=urllib.parse.urlencode(order).encode())
                 result = json.loads(response.read())
                 result["app_trans_id"] = order['app_trans_id']
@@ -83,12 +84,13 @@ class CallbackView(APIView):
         try:
             print("Call back when payment success")
             config = {
-                'key2': 'eG4r0GcoNtRGbO8'
+                'key2': 'PcY4iZIKFCIdgZvA6ueMcMHHUbRLYjPL'
             }
             cbdata = request.data
             print(cbdata)
             # {key: value for key, value in data.items() if key != "order"}
             mac = hmac.new(config['key2'].encode(), cbdata['data'].encode(), hashlib.sha256).hexdigest()
+            print(mac)
             # kiểm tra callback hợp lệ (đến từ ZaloPay server)
             if mac != cbdata['mac']:
                 # callback không hợp lệ
