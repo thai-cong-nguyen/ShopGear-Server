@@ -30,7 +30,7 @@ SECRET_KEY = 'django-insecure-e#%ja3($+ss)-ehokyf6v34!z$kz$a$*ivj0lzv)53$yzb=nq6
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['api-shopgear.onrender.com', '13.228.225.19', '18.142.128.26', '54.254.162.138', '127.0.0.1']
+ALLOWED_HOSTS = ['api-shopgear.onrender.com', '13.228.225.19', '18.142.128.26', '54.254.162.138', '127.0.0.1', 'https://qcgateway.zalopay.vn', 'https://shogear.vercel.app/']
 
 # Application definition
 
@@ -94,10 +94,10 @@ ROOT_URLCONF = 'server.urls'
 CORS_ALLOW_ALL_ORIGINS = True # If this is used then `CORS_ALLOWED_ORIGINS` will not have any effect
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOWED_ORIGINS = [
-    'https://api-shopgear.onrender.com', 'https://13.228.225.19', 'https://18.142.128.26', 'https://54.254.162.138', 'https://127.0.0.1',
+    'https://api-shopgear.onrender.com', 'https://13.228.225.19', 'https://18.142.128.26', 'https://54.254.162.138', 'https://127.0.0.1', 'https://qcgateway.zalopay.vn', 'https://shogear.vercel.app/',
 ] # If this is used, then not need to use `CORS_ALLOW_ALL_ORIGINS = True`
 CORS_ALLOWED_ORIGIN_REGEXES = [
-    'https://api-shopgear.onrender.com', 'https://13.228.225.19', 'https://18.142.128.26', 'https://54.254.162.138', 'https://127.0.0.1',
+    'https://api-shopgear.onrender.com', 'https://13.228.225.19', 'https://18.142.128.26', 'https://54.254.162.138', 'https://127.0.0.1', 'https://qcgateway.zalopay.vn', 'https://shogear.vercel.app/'
 ]
 
 TEMPLATES = [
