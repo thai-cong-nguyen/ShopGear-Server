@@ -90,7 +90,6 @@ class CallbackView(APIView):
             # {key: value for key, value in data.items() if key != "order"}
             # mac = hmac.new(config['key2'].encode(), cbdata['data'].encode(), hashlib.sha256).hexdigest()
             mac = cbdata['data']
-            print(mac)
             # kiểm tra callback hợp lệ (đến từ ZaloPay server)
             if mac != cbdata['mac']:
                 # callback không hợp lệ
@@ -100,10 +99,11 @@ class CallbackView(APIView):
                 # thanh toán thành công
                 # merchant cập nhật trạng thái cho đơn hàng
                 dataJson = json.loads(cbdata['data'])
+                print(dataJson)
                 if dataJson.get('embeddata'):
                     orderdata = {"status": 3}
-                    print(dataJson['embeddata'].get('order'))
-                    instance = Order.objects.get(pk=dataJson['embeddata'].get('order'))
+                    print(dataJson['embed_data'].get('order'))
+                    instance = Order.objects.get(pk=dataJson['embed_data'].get('order'))
                     serializer = OrderSerializer(instance=instance, data=orderdata)
                     serializer.is_valid(raise_exception=True)
                     serializer.update(instance=instance,validated_data=serializer.validated_data)
