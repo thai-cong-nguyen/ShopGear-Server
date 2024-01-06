@@ -83,6 +83,8 @@ class FieldDetail(generics.RetrieveUpdateDestroyAPIView):
 class PostList(generics.ListAPIView):
     queryset = Post.objects.all()
     serializer_class = PostSerializer
+    filter_backends = [DjangoFilterBackend]
+    search_fields = ['zone']
 
 class PostCreate(generics.CreateAPIView):
     queryset = Post.objects.all()
@@ -215,3 +217,15 @@ class OrderList(generics.ListCreateAPIView):
 class OrderDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = Order.objects.all()
     serializer_class = OrderSerializer
+
+class OrderUser(APIView):
+    def get(self, *args, **kwargs):
+        try:
+            user_id = self.kwargs.get('pk')
+            user = User.objects.get(pk=user_id)
+            orders = Order.objects.filter(user=user)
+            serializer = OrderSerializer(orders, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except Exception as e:
+            print(e)
+            return Response({"status": status.HTTP_400_BAD_REQUEST, "message": str(e), "data": {}}, status=status.HTTP_400_BAD_REQUEST)

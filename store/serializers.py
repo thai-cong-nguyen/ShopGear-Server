@@ -94,11 +94,17 @@ class CategorySerializer(serializers.ModelSerializer):
     fields = FieldCategorySerializer(many=True, read_only=True)
     class Meta:
         model = Category
-        fields = ['name', 'fields']
+        fields = ['name', 'fields'] 
 
+class AttachmentSerializer(serializers.ModelSerializer):
+    publication = None
+    class Meta:
+        model = Attachment
+        exclude = ['publication']
 
 class ProductSerializer(serializers.ModelSerializer):
     field_values = FieldValueSerializer(many=True, read_only=True)
+    attachments = AttachmentSerializer(many=True, read_only=True)
     class Meta:
         model = Product
         fields = '__all__'
@@ -120,11 +126,6 @@ class ProductSerializer(serializers.ModelSerializer):
 
         return super().to_internal_value(data)
     
-class AttachmentSerializer(serializers.ModelSerializer):
-    publication = None
-    class Meta:
-        model = Attachment
-        exclude = ['publication']
 
 class PostSerializer(serializers.ModelSerializer):
     product = ProductSerializer()
@@ -320,6 +321,7 @@ class ResetTokenSerializer(serializers.Serializer):
         fields = ["token"]
         
 class OrderItemSerializer(serializers.ModelSerializer):
+    product = ProductSerializer(read_only=True)
     class Meta:
         model = OrderItem
         fields = '__all__'
