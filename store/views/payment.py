@@ -99,7 +99,7 @@ class CallbackView(APIView):
                 dataJson = json.loads(cbdata['data'])
                 if dataJson.get('embeddata'):
                     orderdata = {"status": 3}
-                    instance = Order.objects.get(pk=dataJson.get('embeddata'))
+                    instance = Order.objects.get(pk=dataJson['embeddata'].get('order'))
                     serializer = OrderSerializer(instance=instance, data=orderdata)
                     serializer.is_valid(raise_exception=True)
                     serializer.update(instance=instance,validated_data=serializer.validated_data)
