@@ -100,9 +100,9 @@ class CallbackView(APIView):
                 # thanh toán thành công
                 # merchant cập nhật trạng thái cho đơn hàng
                 dataJson = json.loads(cbdata['data'])
-                print(dataJson)
                 if dataJson.get('embeddata'):
                     orderdata = {"status": 3}
+                    print(dataJson['embeddata'].get('order'))
                     instance = Order.objects.get(pk=dataJson['embeddata'].get('order'))
                     serializer = OrderSerializer(instance=instance, data=orderdata)
                     serializer.is_valid(raise_exception=True)
