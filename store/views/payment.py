@@ -66,7 +66,7 @@ class CreateOrderView(APIView):
                 data = "{}|{}|{}|{}|{}|{}|{}".format(order["app_id"], order["app_trans_id"], order["app_user"],  order["amount"], order["app_time"], order["embed_data"], order["item"])
                 print(data)
                 order["mac"] = hmac.new(config['key1'].encode(), data.encode(), hashlib.sha256).hexdigest()
-                print(mac)
+                print(order["mac"])
                 response = urllib.request.urlopen(url=config["endpoint"], data=urllib.parse.urlencode(order).encode())
                 result = json.loads(response.read())
                 result["app_trans_id"] = order['app_trans_id']
