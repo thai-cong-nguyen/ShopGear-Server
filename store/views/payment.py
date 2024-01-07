@@ -43,7 +43,7 @@ class CreateOrderView(APIView):
                 config = {
                 "app_id": 2553,
                 "key1": "PcY4iZIKFCIdgZvA6ueMcMHHUbRLYjPL",
-                # "key2": "kLtgPl8HHhfvMuDHPwKfgfsY4Ydm9eIz",
+                "key2": "kLtgPl8HHhfvMuDHPwKfgfsY4Ydm9eIz",
                 "endpoint": "https://sb-openapi.zalopay.vn/v2/create"
                 }
                 transID = random.randrange(1000000)
@@ -84,10 +84,9 @@ class CallbackView(APIView):
         try:
             print("Call back when payment success")
             config = {
-                'key2': 'eG4r0GcoNtRGbO8'
+                'key2': 'kLtgPl8HHhfvMuDHPwKfgfsY4Ydm9eIz'
             }
             cbdata = request.data
-            print(cbdata)
             # {key: value for key, value in data.items() if key != "order"}
             order = json.loads(cbdata['data'])
             print(order)
@@ -137,7 +136,7 @@ class QueryOrderView(APIView):
             config = {
                 "app_id": 2553,
                 "key1": "PcY4iZIKFCIdgZvA6ueMcMHHUbRLYjPL",
-                # "key2": "kLtgPl8HHhfvMuDHPwKfgfsY4Ydm9eIz",
+                "key2": "kLtgPl8HHhfvMuDHPwKfgfsY4Ydm9eIz",
                 "endpoint": "https://sb-openapi.zalopay.vn/v2/query"
             }
             params = {
