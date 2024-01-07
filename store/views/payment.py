@@ -64,9 +64,7 @@ class CreateOrderView(APIView):
 
                 # app_id|app_trans_id|app_user|amount|apptime|embed_data|item
                 data = "{}|{}|{}|{}|{}|{}|{}".format(order["app_id"], order["app_trans_id"], order["app_user"],  order["amount"], order["app_time"], order["embed_data"], order["item"])
-                print(data)
                 order["mac"] = hmac.new(config['key1'].encode(), data.encode(), hashlib.sha256).hexdigest()
-                print(order["mac"])
                 response = urllib.request.urlopen(url=config["endpoint"], data=urllib.parse.urlencode(order).encode())
                 result = json.loads(response.read())
                 result["app_trans_id"] = order['app_trans_id']
@@ -87,15 +85,8 @@ class CallbackView(APIView):
                 'key2': 'kLtgPl8HHhfvMuDHPwKfgfsY4Ydm9eIz'
             }
             cbdata = request.data
-            # {key: value for key, value in data.items() if key != "order"}
             order = json.loads(cbdata['data'])
-            print(order)
-            # app_id|app_trans_id|app_user|amount|apptime|embed_data|item
-            # data = "{}|{}|{}|{}|{}|{}|{}".format(order["app_id"], order["app_trans_id"], order["app_user"],  order["amount"], order["app_time"], order["embed_data"], order["item"])
-            # encodedata = '2553|240107_637901|user123|100000|1704598237635|{"order": 95, "redirecturl": "https://shogear.vercel.app/order/result/240107_637901"}|[{}]'
             mac = hmac.new(config['key2'].encode(), cbdata['data'].encode(), hashlib.sha256).hexdigest()
-            print(mac)
-            print(cbdata['mac'])
             # kiểm tra callback hợp lệ (đến từ ZaloPay server)
             if mac != cbdata['mac']:
                 # callback không hợp lệ
