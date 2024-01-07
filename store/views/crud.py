@@ -83,8 +83,9 @@ class FieldDetail(generics.RetrieveUpdateDestroyAPIView):
 class PostList(generics.ListAPIView):
     queryset = Post.objects.all()
     serializer_class = PostSerializer
-    filter_backends = [DjangoFilterBackend]
-    search_fields = ['zone']
+    filter_backends = [SearchFilter, OrderingFilter]
+    search_fields = ['$product__name']
+    ordering_fields = ['product__price']
 
 class PostCreate(generics.CreateAPIView):
     queryset = Post.objects.all()
@@ -209,6 +210,7 @@ class FieldsInCategoryView(APIView):
 class AttachmentList(generics.ListCreateAPIView):
     queryset = Attachment.objects.all()
     serializer_class = AttachmentSerializer
+    pagination_class = None
 
 class OrderList(generics.ListCreateAPIView):
     queryset = Order.objects.all()

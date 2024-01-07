@@ -97,10 +97,9 @@ class CategorySerializer(serializers.ModelSerializer):
         fields = ['name', 'fields'] 
 
 class AttachmentSerializer(serializers.ModelSerializer):
-    publication = None
     class Meta:
         model = Attachment
-        exclude = ['publication']
+        fields = '__all__'
 
 class ProductSerializer(serializers.ModelSerializer):
     field_values = FieldValueSerializer(many=True, read_only=True)
