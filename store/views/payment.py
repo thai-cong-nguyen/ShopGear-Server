@@ -84,16 +84,17 @@ class CallbackView(APIView):
         try:
             print("Call back when payment success")
             config = {
-                'key2': 'PcY4iZIKFCIdgZvA6ueMcMHHUbRLYjPL'
+                'key2': 'eG4r0GcoNtRGbO8'
             }
             cbdata = request.data
             print(cbdata)
             # {key: value for key, value in data.items() if key != "order"}
             order = json.loads(cbdata['data'])
+            print(order)
             # app_id|app_trans_id|app_user|amount|apptime|embed_data|item
-            data = "{}|{}|{}|{}|{}|{}|{}".format(order["app_id"], order["app_trans_id"], order["app_user"],  order["amount"], order["app_time"], order["embed_data"], order["item"])
-            print(data)
-            mac = hmac.new(config['key2'].encode(), data.encode(), hashlib.sha256).hexdigest()
+            # data = "{}|{}|{}|{}|{}|{}|{}".format(order["app_id"], order["app_trans_id"], order["app_user"],  order["amount"], order["app_time"], order["embed_data"], order["item"])
+            # encodedata = '2553|240107_637901|user123|100000|1704598237635|{"order": 95, "redirecturl": "https://shogear.vercel.app/order/result/240107_637901"}|[{}]'
+            mac = hmac.new(config['key2'].encode(), order['data'].encode(), hashlib.sha256).hexdigest()
             print(mac)
             print(cbdata['mac'])
             # kiểm tra callback hợp lệ (đến từ ZaloPay server)
