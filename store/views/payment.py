@@ -99,15 +99,15 @@ class CallbackView(APIView):
             else:
                 # thanh toán thành công
                 # merchant cập nhật trạng thái cho đơn hàng
-                dataJson = json.loads(cbdata['data'])
-                if dataJson['embeddata']:
+                embed_data = json.loads(order.get('embed_data'))
+                if embed_data:
                     print("Update Status Order")
                     orderdata = {"status": 3}
-                    instance = Order.objects.get(pk=dataJson['embed_data'].get('order'))
+                    instance = Order.objects.get(pk=embed_data.get('order'))
                     serializer = OrderSerializer(instance=instance, data=orderdata)
                     serializer.is_valid(raise_exception=True)
                     serializer.update(instance=instance,validated_data=serializer.validated_data)
-                print("update order's status = success where app_trans_id = " + dataJson['app_trans_id'])
+                print("update order's status = success where app_trans_id = " + order['app_trans_id'])
             result['return_code'] = 1
             result['return_message'] = 'success'
         except Exception as e:
@@ -133,8 +133,6 @@ class QueryOrderView(APIView):
                 # "key2": "kLtgPl8HHhfvMuDHPwKfgfsY4Ydm9eIz",
                 "endpoint": "https://sb-openapi.zalopay.vn/v2/query"
             }
-            
-            
             params = {
                 "app_id": config["app_id"],
                 "app_trans_id": data.get("app_trans_id")  # Input your app_trans_id"
