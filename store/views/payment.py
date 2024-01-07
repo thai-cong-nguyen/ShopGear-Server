@@ -87,6 +87,7 @@ class CallbackView(APIView):
                 'key2': 'PcY4iZIKFCIdgZvA6ueMcMHHUbRLYjPL'
             }
             cbdata = request.data
+            print(cbdata)
             # {key: value for key, value in data.items() if key != "order"}
             order = json.loads(cbdata['data'])
             # app_id|app_trans_id|app_user|amount|apptime|embed_data|item
