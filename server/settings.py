@@ -94,10 +94,10 @@ ROOT_URLCONF = 'server.urls'
 CORS_ALLOW_ALL_ORIGINS = True # If this is used then `CORS_ALLOWED_ORIGINS` will not have any effect
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOWED_ORIGINS = [
-    'https://api-shopgear.onrender.com', 'https://13.228.225.19', 'https://18.142.128.26', 'https://54.254.162.138', 'https://127.0.0.1', 'https://qcgateway.zalopay.vn', 'https://shogear.vercel.app/',
+    'https://api-shopgear.onrender.com', 'https://13.228.225.19', 'https://18.142.128.26', 'https://54.254.162.138', 'http://127.0.0.1', 'https://qcgateway.zalopay.vn', 'https://shogear.vercel.app'
 ] # If this is used, then not need to use `CORS_ALLOW_ALL_ORIGINS = True`
 CORS_ALLOWED_ORIGIN_REGEXES = [
-    'https://api-shopgear.onrender.com', 'https://13.228.225.19', 'https://18.142.128.26', 'https://54.254.162.138', 'https://127.0.0.1', 'https://qcgateway.zalopay.vn', 'https://shogear.vercel.app/'
+    'https://api-shopgear.onrender.com', 'https://13.228.225.19', 'https://18.142.128.26', 'https://54.254.162.138', 'http://127.0.0.1', 'https://qcgateway.zalopay.vn', 'https://shogear.vercel.app/'
 ]
 
 TEMPLATES = [

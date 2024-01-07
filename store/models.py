@@ -65,6 +65,10 @@ class Product(models.Model):
     # True: còn hàng; False: đã bán
     is_available = models.BooleanField(default=False)
     amount = models.PositiveIntegerField(default=1)
+    class Status(models.IntegerChoices):
+        USED = 0, 'Đã qua sử dụng'
+        NEW = 1, ' Mới'
+    status = models.IntegerField(choices=Status.choices, default=Status.USED)
     def __str__(self):
         return self.name
     
