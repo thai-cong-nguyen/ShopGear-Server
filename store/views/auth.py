@@ -12,6 +12,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
 from django.contrib.auth import authenticate
 from rest_framework import serializers 
+import json
 
 class LoginView(APIView):
     def post(self, request):
