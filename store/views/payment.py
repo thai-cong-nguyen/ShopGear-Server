@@ -89,7 +89,7 @@ class CallbackView(APIView):
             cbdata = request.data
             # {key: value for key, value in data.items() if key != "order"}
             print(cbdata['data'])
-            order = cbdata['data']
+            order = json.loads(cbdata['data'])
             # app_id|app_trans_id|app_user|amount|apptime|embed_data|item
             data = "{}|{}|{}|{}|{}|{}|{}".format(order["app_id"], order["app_trans_id"], order["app_user"],  order["amount"], order["app_time"], order["embed_data"], order["item"])
             print(data)
