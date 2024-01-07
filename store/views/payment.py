@@ -64,7 +64,9 @@ class CreateOrderView(APIView):
 
                 # app_id|app_trans_id|app_user|amount|apptime|embed_data|item
                 data = "{}|{}|{}|{}|{}|{}|{}".format(order["app_id"], order["app_trans_id"], order["app_user"],  order["amount"], order["app_time"], order["embed_data"], order["item"])
+                print(data)
                 order["mac"] = hmac.new(config['key1'].encode(), data.encode(), hashlib.sha256).hexdigest()
+                print(mac)
                 response = urllib.request.urlopen(url=config["endpoint"], data=urllib.parse.urlencode(order).encode())
                 result = json.loads(response.read())
                 result["app_trans_id"] = order['app_trans_id']
@@ -89,7 +91,10 @@ class CallbackView(APIView):
             order = json.loads(cbdata['data'])
             # app_id|app_trans_id|app_user|amount|apptime|embed_data|item
             data = "{}|{}|{}|{}|{}|{}|{}".format(order["app_id"], order["app_trans_id"], order["app_user"],  order["amount"], order["app_time"], order["embed_data"], order["item"])
+            print(data)
             mac = hmac.new(config['key2'].encode(), data.encode(), hashlib.sha256).hexdigest()
+            print(mac)
+            print(cbdata['mac'])
             # kiểm tra callback hợp lệ (đến từ ZaloPay server)
             if mac != cbdata['mac']:
                 # callback không hợp lệ
