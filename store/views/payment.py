@@ -64,9 +64,7 @@ class CreateOrderView(APIView):
 
                 # app_id|app_trans_id|app_user|amount|apptime|embed_data|item
                 data = "{}|{}|{}|{}|{}|{}|{}".format(order["app_id"], order["app_trans_id"], order["app_user"],  order["amount"], order["app_time"], order["embed_data"], order["item"])
-                print(data)
                 order["mac"] = hmac.new(config['key1'].encode(), data.encode(), hashlib.sha256).hexdigest()
-                print(order['mac'])
                 response = urllib.request.urlopen(url=config["endpoint"], data=urllib.parse.urlencode(order).encode())
                 result = json.loads(response.read())
                 result["app_trans_id"] = order['app_trans_id']
@@ -88,23 +86,22 @@ class CallbackView(APIView):
             }
             cbdata = request.data
             # {key: value for key, value in data.items() if key != "order"}
-            print(cbdata['data'])
             order = json.loads(cbdata['data'])
             # app_id|app_trans_id|app_user|amount|apptime|embed_data|item
             data = "{}|{}|{}|{}|{}|{}|{}".format(order["app_id"], order["app_trans_id"], order["app_user"],  order["amount"], order["app_time"], order["embed_data"], order["item"])
-            print(data)
             mac = hmac.new(config['key2'].encode(), data.encode(), hashlib.sha256).hexdigest()
-            print(mac)
             # kiểm tra callback hợp lệ (đến từ ZaloPay server)
             if mac != cbdata['mac']:
                 # callback không hợp lệ
+                print("Invalid Callback")
                 result['return_code'] = -1
                 result['return_message'] = 'invalid callback'
             else:
                 # thanh toán thành công
                 # merchant cập nhật trạng thái cho đơn hàng
                 dataJson = json.loads(cbdata['data'])
-                if dataJson.get('embeddata'):
+                if dataJson['embeddata']:
+                    print("Update Status Order")
                     orderdata = {"status": 3}
                     instance = Order.objects.get(pk=dataJson['embed_data'].get('order'))
                     serializer = OrderSerializer(instance=instance, data=orderdata)
