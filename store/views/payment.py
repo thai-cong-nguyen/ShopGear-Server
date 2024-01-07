@@ -43,7 +43,7 @@ class CreateOrderView(APIView):
                 config = {
                 "app_id": 2553,
                 "key1": "PcY4iZIKFCIdgZvA6ueMcMHHUbRLYjPL",
-                "key2": "kLtgPl8HHhfvMuDHPwKfgfsY4Ydm9eIz",
+                # "key2": "kLtgPl8HHhfvMuDHPwKfgfsY4Ydm9eIz",
                 "endpoint": "https://sb-openapi.zalopay.vn/v2/create"
                 }
                 transID = random.randrange(1000000)
@@ -53,8 +53,8 @@ class CreateOrderView(APIView):
                     "app_trans_id": app_trans_id, # mã giao dich có định dạng yyMMdd_xxxx
                     "app_user": "user123",
                     "app_time": int(round(time() * 1000)), # miliseconds
-                    "embed_data": json.dumps({"order": createOrder.id, "redirecturl": f"http://localhost:5173/order/result/{app_trans_id}"}),
-                    # f"https://shogear.vercel.app/order/result/{app_trans_id}"
+                    "embed_data": json.dumps({"order": createOrder.id, "redirecturl": f"https://shogear.vercel.app/order/result/{app_trans_id}"}),
+                    # f"http://localhost:5173/order/result/{app_trans_id}"
                     "item": json.dumps([{}]),
                     "amount": data.get("total_price"),
                     "description": "ShopGear - Payment for the order #"+str(transID),
@@ -64,6 +64,7 @@ class CreateOrderView(APIView):
 
                 # app_id|app_trans_id|app_user|amount|apptime|embed_data|item
                 data = "{}|{}|{}|{}|{}|{}|{}".format(order["app_id"], order["app_trans_id"], order["app_user"],  order["amount"], order["app_time"], order["embed_data"], order["item"])
+                print(data)
                 order["mac"] = hmac.new(config['key1'].encode(), data.encode(), hashlib.sha256).hexdigest()
                 print(order['mac'])
                 response = urllib.request.urlopen(url=config["endpoint"], data=urllib.parse.urlencode(order).encode())
@@ -80,7 +81,6 @@ class CreateOrderView(APIView):
 class CallbackView(APIView):
     def post(self, request):
         result = {}
-        data = request.data
         try:
             print("Call back when payment success")
             config = {
@@ -88,8 +88,8 @@ class CallbackView(APIView):
             }
             cbdata = request.data
             # {key: value for key, value in data.items() if key != "order"}
-            # mac = hmac.new(config['key2'].encode(), cbdata['data'].encode(), hashlib.sha256).hexdigest()
-            mac = cbdata['data']
+            mac = hmac.new(config['key2'].encode(), cbdata['data'].encode(), hashlib.sha256).hexdigest()
+            print(mac)
             # kiểm tra callback hợp lệ (đến từ ZaloPay server)
             if mac != cbdata['mac']:
                 # callback không hợp lệ
@@ -99,10 +99,8 @@ class CallbackView(APIView):
                 # thanh toán thành công
                 # merchant cập nhật trạng thái cho đơn hàng
                 dataJson = json.loads(cbdata['data'])
-                print(dataJson)
                 if dataJson.get('embeddata'):
                     orderdata = {"status": 3}
-                    print(dataJson['embed_data'].get('order'))
                     instance = Order.objects.get(pk=dataJson['embed_data'].get('order'))
                     serializer = OrderSerializer(instance=instance, data=orderdata)
                     serializer.is_valid(raise_exception=True)
@@ -130,7 +128,7 @@ class QueryOrderView(APIView):
             config = {
                 "app_id": 2553,
                 "key1": "PcY4iZIKFCIdgZvA6ueMcMHHUbRLYjPL",
-                "key2": "kLtgPl8HHhfvMuDHPwKfgfsY4Ydm9eIz",
+                # "key2": "kLtgPl8HHhfvMuDHPwKfgfsY4Ydm9eIz",
                 "endpoint": "https://sb-openapi.zalopay.vn/v2/query"
             }
             
