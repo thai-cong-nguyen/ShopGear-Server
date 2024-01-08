@@ -122,20 +122,11 @@ class Order(models.Model):
         return self.full_name + ' - ' + self.phone_number + ' - ' + self.ward + ' - ' + self.district + ' - ' + self.province
     
 class SellOrder(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, null=False, default=None, related_name='sell_orders') # seller
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=False, default=None, related_name='seller') # seller
     order = models.ForeignKey(Order, on_delete=models.CASCADE, null=False, default=None, related_name='buy_orders') # buyer
-    def __str__(self):
-        return self.full_name + ' - ' + self.phone_number + ' - ' + self.ward + ' - ' + self.district + ' - ' + self.province
-    
-class SellItem(models.Model):
-    order= models.ForeignKey(
-        SellOrder, on_delete=models.CASCADE, null=False, default=None, related_name='items')
-    product = models.ForeignKey(
-        Product, on_delete=models.CASCADE, null=False, default=None, related_name='sell_items')
-    quantity = models.PositiveIntegerField(default=1)
     confirmation_status = models.IntegerField(choices=Status.choices, default=Status.PENDING)
     def __str__(self):
-        return self.product.name + ' - ' + str(self.quantity)
+        return 'Người bán: ' + self.user.name + ' - ' + 'Người mua: ' + self.order.user.name + ' - ' + 'Tổng tiền: ' + str(self.order.total_price)
     
 class OrderItem(models.Model):
     order= models.ForeignKey(
