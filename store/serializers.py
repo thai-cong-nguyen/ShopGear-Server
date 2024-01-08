@@ -1,6 +1,7 @@
 from ast import Or
+from itertools import product
 from h11 import Response
-from . models import Category, User, Product, Order, OrderItem, Cart, CartItem, Transaction, Post, Field, FieldOption, FieldValue, Attachment
+from . models import Category, User, Product, Order, OrderItem, Cart, CartItem, Transaction, Post, Field, FieldOption, FieldValue, Attachment, SellOrder
 from rest_framework import serializers, routers, status
 from rest_framework.validators import UniqueTogetherValidator
 from rest_framework_simplejwt.tokens import RefreshToken, UntypedToken
@@ -9,6 +10,7 @@ from .utils.generate_token import get_tokens_for_user
 from django.contrib.auth import authenticate
 from django.db.models import Q
 from datetime import datetime
+from django.utils.text import slugify
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
@@ -116,6 +118,8 @@ class ProductSerializer(serializers.ModelSerializer):
     def to_internal_value(self, data):
         # Convert category name to its corresponding primary key
         category_name = data.get('category')
+        data['name_without_accent'] = data.get('name')
+        print(data)
         if category_name:
             try:
                 category = Category.objects.get(name=category_name)
@@ -124,6 +128,12 @@ class ProductSerializer(serializers.ModelSerializer):
                 return Response({"status": (f'Category with name "{category_name}" does not exist.'), "error": 400}) 
 
         return super().to_internal_value(data)
+    def create(self, validated_data):
+        validated_data['name_without_accent'] = slugify(validated_data['name']).replace('-', ' ')
+        return super().create(validated_data)
+    def update(self, instance, validated_data):
+        validated_data['name_without_accent'] = slugify(validated_data['name']).replace('-', ' ')
+        return super().update(instance, validated_data)
     
 
 class PostSerializer(serializers.ModelSerializer):
@@ -320,19 +330,27 @@ class ResetTokenSerializer(serializers.Serializer):
         fields = ["token"]
         
 class OrderItemSerializer(serializers.ModelSerializer):
-    product = ProductSerializer(read_only=True)
+    product = serializers.PrimaryKeyRelatedField(queryset=Product.objects.all())
     class Meta:
-        model = OrderItem
+        model = OrderItem   
         fields = '__all__'
-        
+    def to_internal_value(self, data):
+        data['product'] = data.pop('product_id', None)
+        return super().to_internal_value(data)
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        product = Product.objects.get(pk=representation['product'])
+        representation['product'] = ProductSerializer(instance=product).data
+        return representation
 class OrderSerializer(serializers.ModelSerializer):
-    items = OrderItemSerializer(many=True, read_only=True)
+    items = OrderItemSerializer(many=True)
     class Meta:
         model = Order
         fields = '__all__'
-    def create(self, validated_data, items):
-        items_data = items
-        order = Order.objects.create(**validated_data)
+    def create(self, validated_data):
+        items_data = validated_data['items']
+        data_without_items = {key: value for key, value in validated_data.items() if key != 'items'}
+        order = Order.objects.create(**data_without_items)
         for item_data in items_data:
             OrderItem.objects.create(order=order, **item_data)
         return order
@@ -340,4 +358,10 @@ class OrderSerializer(serializers.ModelSerializer):
         instance.status = validated_data.pop('status')
         instance.save()
         return instance
+    
         
+class SellOrderSerializer(serializers.ModelSerializer):
+    order = OrderSerializer(read_only=True)
+    class Meta:
+        model = SellOrder
+        fields = '__all__'

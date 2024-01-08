@@ -1,3 +1,4 @@
+from collections.abc import Iterable
 from email.policy import default
 from django.db import models
 import datetime
@@ -6,7 +7,7 @@ from django.contrib.postgres.fields import ArrayField
 from django.utils.translation import gettext_lazy as _
 
 class Category(models.Model):
-    name = models.CharField(max_length=50)
+    name = models.CharField(max_length=255)
 
     def __str__(self):
         return self.name
@@ -58,9 +59,9 @@ class Product(models.Model):
         User, on_delete=models.CASCADE, null=False, default=None, related_name='products')
     category = models.ForeignKey(
         Category, on_delete=models.CASCADE, null=False, default=None)
-    name = models.CharField(max_length=255)
-    description = models.CharField(
-        max_length=250, default='', blank=True, null=True)
+    name = models.CharField(max_length=None)
+    name_without_accent = models.CharField(max_length=None, blank=True, null=True)
+    description = models.TextField(default='', blank=True, null=True)
     price = models.DecimalField(default=0, decimal_places=0, max_digits=9)
     # True: còn hàng; False: đã bán
     is_available = models.BooleanField(default=False)
@@ -71,6 +72,7 @@ class Product(models.Model):
     status = models.IntegerField(choices=Status.choices, default=Status.USED)
     def __str__(self):
         return self.name
+    
     
 class FieldValue(models.Model):
     field = models.ForeignKey(Field, on_delete=models.CASCADE)
@@ -118,7 +120,14 @@ class Order(models.Model):
         choices=Status.choices, default=Status.PENDING)
     def __str__(self):
         return self.full_name + ' - ' + self.phone_number + ' - ' + self.ward + ' - ' + self.district + ' - ' + self.province
-
+    
+class SellOrder(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=False, default=None, related_name='seller') # seller
+    order = models.ForeignKey(Order, on_delete=models.CASCADE, null=False, default=None, related_name='buy_orders') # buyer
+    confirmation_status = models.IntegerField(choices=Status.choices, default=Status.PENDING)
+    def __str__(self):
+        return 'Người bán: ' + self.user.name + ' - ' + 'Người mua: ' + self.order.user.name + ' - ' + 'Tổng tiền: ' + str(self.order.total_price)
+    
 class OrderItem(models.Model):
     order= models.ForeignKey(
         Order, on_delete=models.CASCADE, null=False, default=None, related_name='items')
@@ -182,7 +191,9 @@ class Post(models.Model):
                             max_length=4, default=HO_CHI_MINH)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-
+    likes = models.ManyToManyField(User, related_name='liked_posts')
+    likes_count = models.IntegerField(default=0)
+    
     def save(self, *args, **kw):
         self.updated_at = datetime.time()
         super().save(*args, **kw)
@@ -190,3 +201,8 @@ class Post(models.Model):
     def __str__(self):
         return self.user.first_name + ' ' + self.user.last_name + ' - '  + self.product.name
 
+class Like(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    post = models.ForeignKey(Post, on_delete=models.CASCADE)
+    timestamp = models.DateTimeField(auto_now_add=True)
+    

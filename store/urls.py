@@ -38,6 +38,10 @@ urlpatterns = [
     path("api/attachments/", crud.AttachmentList.as_view(), name='attachments'),
     path('api/orders/', crud.OrderList.as_view(), name='order-list'),
     path('api/orders/<int:pk>', crud.OrderDetail.as_view(), name='order-list'),
-    path('api/get/orders/<int:pk>', crud.OrderUser.as_view(), name='order-user')
+    path('api/get/orders/<int:pk>', crud.OrderUser.as_view(), name='order-user'),
+    path('api/get/posts/<int:pk>', crud.PostFromProduct.as_view(), name='post-from-product'),
+    path('api/sell-orders/', crud.SellOrderList.as_view(), name='sell-order-list'),
+    path('api/sell-orders/<int:pk>', crud.SellOrderDetail.as_view(), name='sell-order-detail'),
+    path('api/seller-orders/<int:pk>', crud.SellerOrder.as_view(), name='seller-order-detail'),
     
 ]
