@@ -38,6 +38,7 @@ urlpatterns = [
     path("api/attachments/", crud.AttachmentList.as_view(), name='attachments'),
     path('api/orders/', crud.OrderList.as_view(), name='order-list'),
     path('api/orders/<int:pk>', crud.OrderDetail.as_view(), name='order-list'),
-    path('api/get/orders/<int:pk>', crud.OrderUser.as_view(), name='order-user')
+    path('api/get/orders/<int:pk>', crud.OrderUser.as_view(), name='order-user'),
+    path('api/get/posts/<int:pk>', crud.PostFromProduct.as_view(), name='post-from-product')
     
 ]

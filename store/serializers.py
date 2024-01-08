@@ -9,11 +9,11 @@ from .utils.generate_token import get_tokens_for_user
 from django.contrib.auth import authenticate
 from django.db.models import Q
 from datetime import datetime
+from django.utils.text import slugify
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['id', 'username', 'first_name',
-                  'last_name', 'is_admin', 'products', 'posts', 'phone']
+        exclude = ['password']
 class UsernameSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
@@ -116,6 +116,8 @@ class ProductSerializer(serializers.ModelSerializer):
     def to_internal_value(self, data):
         # Convert category name to its corresponding primary key
         category_name = data.get('category')
+        data['name_without_accent'] = data.get('name')
+        print(data)
         if category_name:
             try:
                 category = Category.objects.get(name=category_name)
@@ -124,6 +126,12 @@ class ProductSerializer(serializers.ModelSerializer):
                 return Response({"status": (f'Category with name "{category_name}" does not exist.'), "error": 400}) 
 
         return super().to_internal_value(data)
+    def create(self, validated_data):
+        validated_data['name_without_accent'] = slugify(validated_data['name']).replace('-', ' ')
+        return super().create(validated_data)
+    def update(self, instance, validated_data):
+        validated_data['name_without_accent'] = slugify(validated_data['name']).replace('-', ' ')
+        return super().update(instance, validated_data)
     
 
 class PostSerializer(serializers.ModelSerializer):

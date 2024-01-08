@@ -62,7 +62,7 @@ class ProductList(generics.ListCreateAPIView):
     serializer_class = ProductSerializer
     # tìm kiếm theo query
     filter_backends = [SearchFilter, OrderingFilter]
-    search_fields = ['name', 'description', 'user__username']
+    search_fields = ['name_without_accent', 'description', 'user__username', 'name']
     ordering_fields = ['price']
 
 
@@ -84,7 +84,7 @@ class PostList(generics.ListAPIView):
     queryset = Post.objects.all()
     serializer_class = PostSerializer
     filter_backends = [SearchFilter, OrderingFilter]
-    search_fields = ['$product__name']
+    search_fields = ['$product__name', 'product__name_without_accent', 'description']
     ordering_fields = ['product__price']
 
 class PostCreate(generics.CreateAPIView):
@@ -227,6 +227,18 @@ class OrderUser(APIView):
             user = User.objects.get(pk=user_id)
             orders = Order.objects.filter(user=user)
             serializer = OrderSerializer(orders, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except Exception as e:
+            print(e)
+            return Response({"status": status.HTTP_400_BAD_REQUEST, "message": str(e), "data": {}}, status=status.HTTP_400_BAD_REQUEST)
+
+class PostFromProduct(APIView):
+    def get(self, *args, **kwargs):
+        try:
+            product_id = self.kwargs.get('pk')
+            product = Product.objects.get(pk=product_id)
+            post = Post.objects.get(product=product)
+            serializer = PostSerializer(post)
             return Response(serializer.data, status=status.HTTP_200_OK)
         except Exception as e:
             print(e)
