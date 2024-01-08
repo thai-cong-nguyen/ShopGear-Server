@@ -14,7 +14,8 @@ from django.utils.text import slugify
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        exclude = ['password']
+        fields = ['id', 'username', 'first_name',
+                  'last_name', 'is_admin', 'products', 'posts', 'phone']
 class UsernameSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
