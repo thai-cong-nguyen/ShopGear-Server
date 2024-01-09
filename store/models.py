@@ -2,8 +2,11 @@ from collections.abc import Iterable
 from email.policy import default
 from django.db import models
 import datetime
+from django_rest_passwordreset.signals import reset_password_token_created
+from .utils.reset_password import sendResetPasswordEmail
 # Categories of Products
 from django.contrib.postgres.fields import ArrayField
+from django.dispatch import receiver
 from django.utils.translation import gettext_lazy as _
 
 class Category(models.Model):
@@ -31,6 +34,10 @@ class User(models.Model):
 
     def __str__(self):
         return f'{self.first_name} {self.last_name}'
+    
+    @receiver(reset_password_token_created)
+    def password_token_created(sender, instance, reset_password_token, *args, **kwargs):
+        sendResetPasswordEmail(reset_password_token)
     
 class Field(models.Model):
     category = models.ForeignKey(Category, on_delete=models.CASCADE, null=False, default=None, related_name='fields')
