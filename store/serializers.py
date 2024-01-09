@@ -340,6 +340,7 @@ class OrderItemSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         representation = super().to_representation(instance)
         representation['product'] = ProductSerializer(instance=instance.product).data
+        representation['product']['user'] = UserSerializer(instance=instance.product.user).data
         return representation
     
 class OrderSerializer(serializers.ModelSerializer):
