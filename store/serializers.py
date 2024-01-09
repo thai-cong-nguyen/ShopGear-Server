@@ -1,7 +1,7 @@
 from ast import Or
 from itertools import product
 from h11 import Response
-from . models import Category, User, Product, Order, OrderItem, Cart, CartItem, Transaction, Post, Field, FieldOption, FieldValue, Attachment, SellOrder
+from . models import Category, User, Product, Order, OrderItem, Cart, CartItem, Transaction, Post, Field, FieldOption, FieldValue, Attachment
 from rest_framework import serializers, routers, status
 from rest_framework.validators import UniqueTogetherValidator
 from rest_framework_simplejwt.tokens import RefreshToken, UntypedToken
@@ -352,16 +352,12 @@ class OrderSerializer(serializers.ModelSerializer):
         data_without_items = {key: value for key, value in validated_data.items() if key != 'items'}
         order = Order.objects.create(**data_without_items)
         for item_data in items_data:
-            OrderItem.objects.create(order=order, **item_data)
+            product = item_data['product']
+            user = User.objects.get(pk=product.user.id)
+            OrderItem.objects.create(order=order, product=product, seller=user)
         return order
     def update(self, instance, validated_data):
         instance.status = validated_data.pop('status')
         instance.save()
         return instance
     
-        
-class SellOrderSerializer(serializers.ModelSerializer):
-    order = OrderSerializer(read_only=True)
-    class Meta:
-        model = SellOrder
-        fields = '__all__'
