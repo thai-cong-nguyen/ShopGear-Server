@@ -328,7 +328,10 @@ class ResetTokenSerializer(serializers.Serializer):
         return data
     class Meta: 
         fields = ["token"]
-        
+class OrderDetailSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Order
+        fields = '__all__'
 class OrderItemSerializer(serializers.ModelSerializer):
     product = serializers.PrimaryKeyRelatedField(queryset=Product.objects.all())
     class Meta:
@@ -341,6 +344,7 @@ class OrderItemSerializer(serializers.ModelSerializer):
         representation = super().to_representation(instance)
         representation['product'] = ProductSerializer(instance=instance.product).data
         representation['product']['user'] = UserSerializer(instance=instance.product.user).data
+        representation['order'] = OrderDetailSerializer(instance=instance.order).data
         return representation
     
 class OrderSerializer(serializers.ModelSerializer):
