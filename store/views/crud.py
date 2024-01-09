@@ -243,37 +243,9 @@ class PostFromProduct(APIView):
         except Exception as e:
             print(e)
             return Response({"status": status.HTTP_400_BAD_REQUEST, "message": str(e), "data": {}}, status=status.HTTP_400_BAD_REQUEST)
-# class SellOrderList(generics.ListCreateAPIView):
-#     queryset = SellOrder.objects.all()
-#     serializer_class = SellOrderSerializer
-#     # def get_queryset(self):
-#     #     return Order.objects.filter(status=2)
-    
-# class SellOrderDetail(generics.RetrieveUpdateDestroyAPIView):
-#     queryset = SellOrder.objects.all()
-#     serializer_class = SellOrderSerializer
-    
-# class SellerOrder(APIView):
-#     def get(self, *args, **kwargs):
-#         try:
-#             user_id = self.kwargs.get('pk')
-#             user = User.objects.get(pk=user_id)
-#             sell_orders = SellOrder.objects.filter(user=user)
-#             serializer = SellOrderSerializer(sell_orders, many=True)
-#             return Response(serializer.data, status=status.HTTP_200_OK)
-#         except Exception as e:
-#             print(e)
-#             return Response({"status": status.HTTP_400_BAD_REQUEST, "message": str(e), "data": {}}, status=status.HTTP_400_BAD_REQUEST)
-#     def put(self, request, pk, *args, **kwargs):
-#         try:
-#             user_id = self.kwargs.get('pk')
-#             user = User.objects.get(pk=user_id)
-#             sell_order = get_object_or_404(SellOrder, order=request.data['order'], user=user)
-#             serializer = SellOrderSerializer(sell_order, data=request.data)
-#             if serializer.is_valid():
-#                 serializer.save()
-#                 return Response(serializer.data, status=status.HTTP_200_OK)
-#             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-#         except Exception as e:
-#             print(e)
-#             return Response({"status": status.HTTP_400_BAD_REQUEST, "message": str(e), "data": {}}, status=status.HTTP_400_BAD_REQUEST)
+        
+class OrderItemView(APIView):
+    def get(self, *args, **kwargs):
+        order_items = OrderItem.objects.all()
+        serializer = OrderItemSerializer(order_items, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
