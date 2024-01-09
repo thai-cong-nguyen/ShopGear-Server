@@ -1,9 +1,9 @@
 from locale import atoi
 from venv import create
 from django.shortcuts import render
-from ..models import Category, SellOrder, User, Product, Order, OrderItem, Cart, CartItem, Transaction, Post
+from ..models import Category, User, Product, Order, OrderItem, Cart, CartItem, Transaction, Post
 from django.db import transaction
-from ..serializers import OrderSerializer, OrderItemSerializer, SellOrderSerializer
+from ..serializers import OrderSerializer, OrderItemSerializer
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status, mixins, generics
@@ -41,14 +41,6 @@ class CreateOrderView(APIView):
 
                 serializer.is_valid(raise_exception=True)
                 createOrder = serializer.create(validated_data=serializer.validated_data)
-                # create order to seller
-                order_serializer = OrderSerializer(instance=createOrder)
-                for item in order_serializer.data['items']:
-                    product_id = item['product']['id']
-                    product_instance = Product.objects.get(pk=product_id)
-                    user_instance = User.objects.get(pk=product_instance.user.id)
-                    sell_order_instance = SellOrder.objects.create(order=createOrder, user=user_instance)
-                    sell_order_instance.save()
                 
                 config = {
                 "app_id": 2553,

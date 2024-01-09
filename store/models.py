@@ -102,7 +102,8 @@ class Status(models.IntegerChoices):
         UNPAID = 2, ' Chưa thanh toán'
         PAID = 3, 'Đã thanh toán'
         IN_TRANSIT = 4, 'Đang vận chuyển'
-        DELIVERED = 5, 'Đã giao hàng'
+        DELIVERED = 5, 'Đã giao hàng',
+        CANCEL_PENDING = 6, 'Chờ huỷ',
         CANCELLED = 0, 'Đã huỷ'
         
 class Order(models.Model):
@@ -121,19 +122,14 @@ class Order(models.Model):
     def __str__(self):
         return self.full_name + ' - ' + self.phone_number + ' - ' + self.ward + ' - ' + self.district + ' - ' + self.province
     
-class SellOrder(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, null=False, default=None, related_name='seller') # seller
-    order = models.ForeignKey(Order, on_delete=models.CASCADE, null=False, default=None, related_name='buy_orders') # buyer
-    confirmation_status = models.IntegerField(choices=Status.choices, default=Status.PENDING)
-    def __str__(self):
-        return 'Người bán: ' + self.user.name + ' - ' + 'Người mua: ' + self.order.user.name + ' - ' + 'Tổng tiền: ' + str(self.order.total_price)
-    
 class OrderItem(models.Model):
     order= models.ForeignKey(
         Order, on_delete=models.CASCADE, null=False, default=None, related_name='items')
     product = models.ForeignKey(
         Product, on_delete=models.CASCADE, null=False, default=None, related_name='order_items')
     quantity = models.PositiveIntegerField(default=1)
+    seller = models.ForeignKey(User, on_delete=models.CASCADE, null=False, default=None, related_name='seller')
+    confirmation_status = models.IntegerField(choices=Status.choices, default=Status.PENDING)
 
     def __str__(self):
         return self.product.name + ' - ' + str(self.quantity)
