@@ -243,37 +243,53 @@ class PostFromProduct(APIView):
         except Exception as e:
             print(e)
             return Response({"status": status.HTTP_400_BAD_REQUEST, "message": str(e), "data": {}}, status=status.HTTP_400_BAD_REQUEST)
-# class SellOrderList(generics.ListCreateAPIView):
-#     queryset = SellOrder.objects.all()
-#     serializer_class = SellOrderSerializer
-#     # def get_queryset(self):
-#     #     return Order.objects.filter(status=2)
-    
-# class SellOrderDetail(generics.RetrieveUpdateDestroyAPIView):
-#     queryset = SellOrder.objects.all()
-#     serializer_class = SellOrderSerializer
-    
-# class SellerOrder(APIView):
-#     def get(self, *args, **kwargs):
-#         try:
-#             user_id = self.kwargs.get('pk')
-#             user = User.objects.get(pk=user_id)
-#             sell_orders = SellOrder.objects.filter(user=user)
-#             serializer = SellOrderSerializer(sell_orders, many=True)
-#             return Response(serializer.data, status=status.HTTP_200_OK)
-#         except Exception as e:
-#             print(e)
-#             return Response({"status": status.HTTP_400_BAD_REQUEST, "message": str(e), "data": {}}, status=status.HTTP_400_BAD_REQUEST)
-#     def put(self, request, pk, *args, **kwargs):
-#         try:
-#             user_id = self.kwargs.get('pk')
-#             user = User.objects.get(pk=user_id)
-#             sell_order = get_object_or_404(SellOrder, order=request.data['order'], user=user)
-#             serializer = SellOrderSerializer(sell_order, data=request.data)
-#             if serializer.is_valid():
-#                 serializer.save()
-#                 return Response(serializer.data, status=status.HTTP_200_OK)
-#             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-#         except Exception as e:
-#             print(e)
-#             return Response({"status": status.HTTP_400_BAD_REQUEST, "message": str(e), "data": {}}, status=status.HTTP_400_BAD_REQUEST)
+
+class OrderItemListView(APIView):
+    def get(self, *args, **kwargs):
+        try:
+            buyer_id = self.kwargs.get('buyer')
+            buyer = User.objects.get(pk=buyer_id)
+            orders = Order.objects.filter(user=buyer)
+            order_items = OrderItem.objects.filter(order__in=orders)
+            # Serialize the order_items
+            order_items_serializer = OrderItemSerializer(order_items, many=True)
+            serialized_data = order_items_serializer.data
+
+            return Response(serialized_data, status=status.HTTP_200_OK)
+                
+        except Exception as e:
+            print(e)
+            return Response({"status": status.HTTP_400_BAD_REQUEST, "message": str(e), "data": {}}, status=status.HTTP_400_BAD_REQUEST)
+        
+class OrderItemView(APIView):
+    def get(self, *args, **kwargs):
+        try:
+            seller_id = self.kwargs.get('seller')
+            seller = User.objects.get(pk=seller_id)
+            order_items = OrderItem.objects.filter(seller=seller)
+            serializer = OrderItemSerializer(order_items, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except Exception as e:
+            print(e)
+            return Response({"status": status.HTTP_400_BAD_REQUEST, "message": str(e), "data": {}}, status=status.HTTP_400_BAD_REQUEST)
+    def put(self, request, *args, **kwargs):
+        try:
+            seller_id = self.kwargs.get('seller')
+            order_id = request.data.get('order')
+            confirmation_status = request.data.get('confirmation_status')
+            
+            seller = User.objects.get(pk=seller_id)
+            order = Order.objects.get(pk=order_id)
+            order_item = OrderItem.objects.get(order=order, seller=seller)
+
+            # Update confirmation_status attribute from request data
+            order_item.confirmation_status = confirmation_status
+            # Save the updated seller object
+            order_item.save()
+            
+            # Return a success response
+            return Response({"status": status.HTTP_200_OK, "message": "Confirmation status updated successfully", "data": {}})
+            
+        except Exception as e:
+            print(e)
+            return Response({"status": status.HTTP_400_BAD_REQUEST, "message": str(e), "data": {}}, status=status.HTTP_400_BAD_REQUEST)
