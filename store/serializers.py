@@ -339,9 +339,9 @@ class OrderItemSerializer(serializers.ModelSerializer):
         return super().to_internal_value(data)
     def to_representation(self, instance):
         representation = super().to_representation(instance)
-        product = Product.objects.get(pk=representation['product'])
-        representation['product'] = ProductSerializer(instance=product).data
+        representation['product'] = ProductSerializer(instance=instance.product).data
         return representation
+    
 class OrderSerializer(serializers.ModelSerializer):
     items = OrderItemSerializer(many=True)
     class Meta:

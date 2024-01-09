@@ -246,6 +246,12 @@ class PostFromProduct(APIView):
         
 class OrderItemView(APIView):
     def get(self, *args, **kwargs):
-        order_items = OrderItem.objects.all()
-        serializer = OrderItemSerializer(order_items, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        try:
+            seller_id = self.kwargs.get('seller')
+            seller = User.objects.get(pk=seller_id)
+            order_items = OrderItem.objects.filter(seller=seller)
+            serializer = OrderItemSerializer(order_items, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except Exception as e:
+            print(e)
+            return Response({"status": status.HTTP_400_BAD_REQUEST, "message": str(e), "data": {}}, status=status.HTTP_400_BAD_REQUEST)
