@@ -1,7 +1,4 @@
-from collections.abc import Iterable
-from email import message
-from email.policy import default
-from turtle import update
+
 from django.db import models
 import datetime
 from django_rest_passwordreset.signals import reset_password_token_created

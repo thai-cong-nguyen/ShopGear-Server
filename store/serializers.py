@@ -11,11 +11,12 @@ from django.contrib.auth import authenticate
 from django.db.models import Q
 from datetime import datetime
 from django.utils.text import slugify
+from django.db import transaction
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['id', 'username', 'first_name',
-                  'last_name', 'is_admin', 'products', 'posts', 'phone']
+                  'last_name', 'is_admin', 'products', 'posts', 'phone', 'email']
 class UsernameSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
@@ -167,51 +168,54 @@ class PostAndProductSerializer(serializers.Serializer):
     attachments = AttachmentSerializer(required=False, many=True)
     def create(self, validated_data):
         try:
-            user = validated_data.pop('user')
-            # Xử lý dữ liệu và tạo Product
-            product_data = validated_data['product']
-            product_data['user'] = user
-            category_name = product_data['category']
-            category = Category.objects.get(name=category_name)
-            product_data['category'] = category
-            product = Product.objects.create(**product_data)
+            print('create post')
+            with transaction.atomic():
+                user = validated_data.pop('user')
+                # Xử lý dữ liệu và tạo Product
+                product_data = validated_data['product']
+                product_data['user'] = user
+                category_name = product_data['category']
+                category = Category.objects.get(name=category_name)
+                product_data['category'] = category
+                product_data['name_without_accent'] = slugify(product_data['name']).replace('-', ' ')
+                product = Product.objects.create(**product_data)
 
-            # Thêm fields liên kết với product 
-            fields_data = validated_data['fields']
-            
-            # attachment data 
-            attachments_data = validated_data['attachments']
-            
-            for field_data in fields_data:
-                # Convert field names to primary keys
-                field = Field.objects.get(pk=field_data['field'])
-                field_data['field'] = field
-                field_data['product'] = product
-
-                # Tạo FieldValue với primary keys đã được chuyển đổi
-                try: 
-                    FieldValue.objects.create(**field_data)
-                except FieldValue.DoesNotExist:
-                    return Response({'status': 400, 'message': 'FieldValue does not exist'}, status=status.HTTP_400_BAD_REQUEST)
-            
-            # Lưu attachment 
-            for attachment in attachments_data:
-                try:
-                    attachment['publication'] = product 
-                    Attachment.objects.create(**attachment)
-                except Exception as e:
-                    raise serializers.ValidationError(e)
+                # Thêm fields liên kết với product 
+                fields_data = validated_data['fields']
                 
-            # Tạo Post
-            post_data = {
-                'user': user,
-                'product': product,
-                'description': validated_data['post_description'],
-                'zone': validated_data['post_zone'],
-            }
-            post = Post.objects.create(**post_data)
-            post_serializer = PostSerializer(post)
-            return post_serializer.data
+                # attachment data 
+                attachments_data = validated_data['attachments']
+                
+                for field_data in fields_data:
+                    # Convert field names to primary keys
+                    field = Field.objects.get(pk=field_data['field'])
+                    field_data['field'] = field
+                    field_data['product'] = product
+
+                    # Tạo FieldValue với primary keys đã được chuyển đổi
+                    try: 
+                        FieldValue.objects.create(**field_data)
+                    except FieldValue.DoesNotExist:
+                        return Response({'status': 400, 'message': 'FieldValue does not exist'}, status=status.HTTP_400_BAD_REQUEST)
+                
+                # Lưu attachment 
+                for attachment in attachments_data:
+                    try:
+                        attachment['publication'] = product 
+                        Attachment.objects.create(**attachment)
+                    except Exception as e:
+                        raise serializers.ValidationError(e)
+                    
+                # Tạo Post
+                post_data = {
+                    'user': user,
+                    'product': product,
+                    'description': validated_data['post_description'],
+                    'zone': validated_data['post_zone'],
+                }
+                post = Post.objects.create(**post_data)
+                post_serializer = PostSerializer(post)
+                return post_serializer.data
         
         except KeyError as e:
             raise serializers.ValidationError({"status": 400, "error": f"The field {e} is missing."})
