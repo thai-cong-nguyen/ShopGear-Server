@@ -1,6 +1,6 @@
 from multiprocessing import Value
 from django.shortcuts import render
-from ..models import Category, User, Product, Order, OrderItem, Cart, CartItem, Transaction, Post, Field, FieldValue, FieldOption, Attachment
+from ..models import Category, Status, User, Product, Order, OrderItem, Cart, CartItem, Transaction, Post, Field, FieldValue, FieldOption, Attachment
 
 from ..serializers import  UserSerializer, CategorySerializer, ProductSerializer, OrderSerializer, OrderItemSerializer, CartSerializer, CartItemSerializer, TransactionSerializer, PostSerializer, FieldSerializer, PostAndProductSerializer, FieldValueSerializer, FieldOptionSerializer, AttachmentSerializer
 from rest_framework.decorators import api_view
@@ -231,7 +231,19 @@ class OrderUser(APIView):
         except Exception as e:
             print(e)
             return Response({"status": status.HTTP_400_BAD_REQUEST, "message": str(e), "data": {}}, status=status.HTTP_400_BAD_REQUEST)
-
+    def put(self, request, *args, **kwargs):
+        try:
+            user_id = self.kwargs.get('pk')
+            order_id = request.data.get('order')
+            order = Order.objects.get(pk=order_id)
+            if user_id != order.user.id:
+                return Response({"status": status.HTTP_400_BAD_REQUEST, "message": "User is not allowed to update this order", "data": {}}, status=status.HTTP_400_BAD_REQUEST)
+            order.status = 5
+            order.save()
+            return Response({"status": status.HTTP_200_OK, "message": "Order status updated successfully!", "data": {}})
+        except Exception as e:
+            print(e)
+            return Response({"status": status.HTTP_400_BAD_REQUEST, "message": str(e), "data": {}}, status=status.HTTP_400_BAD_REQUEST)
 class PostFromProduct(APIView):
     def get(self, *args, **kwargs):
         try:
@@ -267,7 +279,7 @@ class OrderItemView(APIView):
             seller_id = self.kwargs.get('seller')
             seller = User.objects.get(pk=seller_id)
             order_items = OrderItem.objects.filter(seller=seller)
-            serializer = OrderItemSerializer(order_items, many=True)
+            serializer = OrderItemSerializer(order_items, many=True)    
             return Response(serializer.data, status=status.HTTP_200_OK)
         except Exception as e:
             print(e)
@@ -276,19 +288,30 @@ class OrderItemView(APIView):
         try:
             seller_id = self.kwargs.get('seller')
             order_id = request.data.get('order')
+            product_id = request.data.get('product')
             confirmation_status = request.data.get('confirmation_status')
             
             seller = User.objects.get(pk=seller_id)
             order = Order.objects.get(pk=order_id)
-            order_item = OrderItem.objects.get(order=order, seller=seller)
+            product = Product.objects.get(pk=product_id)
+            order_item = OrderItem.objects.get(order=order, seller=seller, product=product)
 
             # Update confirmation_status attribute from request data
             order_item.confirmation_status = confirmation_status
             # Save the updated seller object
             order_item.save()
             
+            # Check if all OrderItems assciated with the Order hav confirmation status
+            updated = False
+            order_items = OrderItem.objects.filter(order=order)
+            for order_status in range(1, 7):
+                if all(item.confirmation_status == order_status for item in order_items):
+                    order.status = order_status 
+                    updated = True
+                    order.save()
+            
             # Return a success response
-            return Response({"status": status.HTTP_200_OK, "message": "Confirmation status updated successfully", "data": {}})
+            return Response({"status": status.HTTP_200_OK, "message": f"Confirmation status updated successfully! Order updated: {updated}", "data": {}})
             
         except Exception as e:
             print(e)
