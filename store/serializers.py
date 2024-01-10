@@ -365,4 +365,3 @@ class OrderSerializer(serializers.ModelSerializer):
         instance.status = validated_data.pop('status')
         instance.save()
         return instance
-    

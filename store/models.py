@@ -1,5 +1,7 @@
 from collections.abc import Iterable
+from email import message
 from email.policy import default
+from turtle import update
 from django.db import models
 import datetime
 from django_rest_passwordreset.signals import reset_password_token_created
@@ -106,12 +108,10 @@ class Attachment(models.Model):
         
 class Status(models.IntegerChoices):
         PENDING = 1, 'Đang chờ xác nhận'
-        UNPAID = 2, ' Chưa thanh toán'
-        PAID = 3, 'Đã thanh toán'
-        IN_TRANSIT = 4, 'Đang vận chuyển'
-        DELIVERED = 5, 'Đã giao hàng',
-        CANCEL_PENDING = 6, 'Chờ huỷ',
-        CANCELLED = 0, 'Đã huỷ'
+        PAID = 2, 'Đang chờ thanh toán'
+        IN_TRANSIT = 3, 'Đang vận chuyển'
+        DELIVERED = 4, 'Đã giao hàng',
+        CANCELLED = 5, 'Đã huỷ'
         
 class Order(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, null=False, default=None, related_name='orders')
@@ -128,7 +128,8 @@ class Order(models.Model):
         choices=Status.choices, default=Status.PENDING)
     def __str__(self):
         return self.full_name + ' - ' + self.phone_number + ' - ' + self.ward + ' - ' + self.district + ' - ' + self.province
-    
+
+            
 class OrderItem(models.Model):
     order= models.ForeignKey(
         Order, on_delete=models.CASCADE, null=False, default=None, related_name='items')
