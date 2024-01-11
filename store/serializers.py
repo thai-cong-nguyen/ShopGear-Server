@@ -1,7 +1,7 @@
 from ast import Or
 from itertools import product
 from h11 import Response
-from . models import Category, User, Product, Order, OrderItem, Cart, CartItem, Transaction, Post, Field, FieldOption, FieldValue, Attachment
+from . models import Category, User, Product, Order, OrderItem, Cart, CartItem, Transaction, Post, Field, FieldOption, FieldValue, Attachment, ResetPassword
 from rest_framework import serializers, routers, status
 from rest_framework.validators import UniqueTogetherValidator
 from rest_framework_simplejwt.tokens import RefreshToken, UntypedToken
@@ -369,3 +369,65 @@ class OrderSerializer(serializers.ModelSerializer):
         instance.status = validated_data.pop('status')
         instance.save()
         return instance
+
+# test RESET PASSWORD
+
+class PasswordResetSerializer(serializers.ModelSerializer):
+    email = serializers.EmailField()
+    def validate_email(self, validated_data):
+        if not User.objects.filter(email=validated_data).exists():
+            raise serializers.ValidationError('Invalid e-mail address')
+        user = User.objects.get(email=validated_data)
+        return user
+    def create(self, validated_data):
+        reset_password = ResetPassword.objects.create(key= validated_data.get('key'), ip_address=validated_data.get('ip_address'), user_agent=validated_data.get('user_agent'), user_id=validated_data.get('user_id'))
+        return reset_password
+    def update(self, instance, validated_data):
+        instance.key = validated_data.pop('key')
+        instance.ip_address = validated_data.pop('ip_address')
+        instance.user_agent = validated_data.get('user_agent')
+        return instance
+    class Meta:
+        model = User
+        fields = ['email']
+        
+
+
+# class PasswordResetConfirmSerializer(serializers.Serializer):
+#     """
+#     Serializer for requesting a password reset e-mail.
+#     """
+
+#     new_password1 = serializers.CharField(max_length=128)
+#     new_password2 = serializers.CharField(max_length=128)
+
+#     uid = serializers.CharField(required=True)
+#     token = serializers.CharField(required=True)
+
+#     def custom_validation(self, attrs):
+#         pass
+
+#     def validate(self, attrs):
+#         self._errors = {}
+
+#         # Decode the uidb64 to uid to get User object
+#         try:
+#             uid = force_text(uid_decoder(attrs['uid']))
+#             self.user = User.get(pk=uid)
+#         except (TypeError, ValueError, OverflowError, UserModel.DoesNotExist):
+#             raise ValidationError({'uid': ['Invalid value']})
+
+#         self.custom_validation(attrs)
+#         # Construct SetPasswordForm instance
+#         self.set_password_form = self.set_password_form_class(
+#             user=self.user, data=attrs
+#         )
+#         if not self.set_password_form.is_valid():
+#             raise serializers.ValidationError(self.set_password_form.errors)
+#         if not default_token_generator.check_token(self.user, attrs['token']):
+#             raise ValidationError({'token': ['Invalid value']})
+
+#         return attrs
+
+#     def save(self):
+#         self.set_password_form.save()
