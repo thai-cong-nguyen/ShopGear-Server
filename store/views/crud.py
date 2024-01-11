@@ -2,7 +2,7 @@ from multiprocessing import Value
 from django.shortcuts import render
 from ..models import Category, Status, User, Product, Order, OrderItem, Cart, CartItem, Transaction, Post, Field, FieldValue, FieldOption, Attachment
 
-from ..serializers import  UserSerializer, CategorySerializer, ProductSerializer, OrderSerializer, OrderItemSerializer, CartSerializer, CartItemSerializer, TransactionSerializer, PostSerializer, FieldSerializer, PostAndProductSerializer, FieldValueSerializer, FieldOptionSerializer, AttachmentSerializer
+from ..serializers import  PostReviewSerializer, UserSerializer, CategorySerializer, ProductSerializer, OrderSerializer, OrderItemSerializer, CartSerializer, CartItemSerializer, TransactionSerializer, PostSerializer, FieldSerializer, PostAndProductSerializer, FieldValueSerializer, FieldOptionSerializer, AttachmentSerializer
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status, mixins, generics, viewsets, serializers
@@ -316,3 +316,6 @@ class OrderItemView(APIView):
         except Exception as e:
             print(e)
             return Response({"status": status.HTTP_400_BAD_REQUEST, "message": str(e), "data": {}}, status=status.HTTP_400_BAD_REQUEST)
+class PostReviewView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Post.objects.all()
+    serializer_class = PostReviewSerializer

@@ -1,4 +1,3 @@
-
 from django.db import models
 import datetime
 from django_rest_passwordreset.signals import reset_password_token_created
@@ -194,7 +193,12 @@ class Post(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     likes = models.ManyToManyField(User, related_name='liked_posts')
     likes_count = models.IntegerField(default=0)
-    
+    class ReviewStatus(models.IntegerChoices):
+        PENDING = 0, 'Đang chờ duyệt'
+        APPROVED = 1, 'Đã duyệt'
+        REJECTED = 2, 'Đã từ chối'
+        
+    review = models.IntegerField(choices=ReviewStatus.choices, default=ReviewStatus.PENDING)
     def save(self, *args, **kw):
         self.updated_at = datetime.time()
         super().save(*args, **kw)
