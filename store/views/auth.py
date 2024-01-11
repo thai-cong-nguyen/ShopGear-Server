@@ -1,3 +1,4 @@
+
 from django.shortcuts import render
 from ..models import Category, User, Product, Order, OrderItem, Cart, CartItem, Transaction, Post
 
@@ -79,20 +80,18 @@ class ResetPasswordSendOTPView(APIView):
     serializer = PasswordResetSerializer
     def post(self, request):
         try:
-            serializer = self.serializer(data = request.data)
-            serializer.is_valid(raise_exception=True)
-            user = serializer.validated_data
-            user_serializer = UserSerializer(instance=user.get('email'))
+            user_email = request.data.get('email')
+            user = User.objects.get(email=user_email)
+            user_serializer = UserSerializer(instance=user)
             get_token = get_token_generator()
-            reset_password = {
+            print('Line 87: ', user_serializer.data)
+            reset_password_data = {
                 "key": get_token,
-                "username": user_serializer.data.get('username'),
-                "username": "username",
-                "email": "nguyenthaicong265@gmail.com",
+                "username": user_serializer.data['username'],
+                "email": user_email
             }
-            print(ResetPasswordToken.objects.filter(user_id=user_serializer).exists())
-            sendResetPasswordEmail(reset_password)
-
+            # print(ResetPasswordToken.objects.filter(user_id=user_serializer).exists())
+            sendResetPasswordEmail(reset_password_data)
             # If not Exist => Create
             if not ResetPasswordToken.objects.filter(user_id=user_serializer.data.get('id')).exists():
                 validated_data = {
@@ -101,16 +100,23 @@ class ResetPasswordSendOTPView(APIView):
                     "user_agent": request.META.get(HTTP_USER_AGENT_HEADER, ''),
                     "user_id": user_serializer.data.get('id'),
                 }
-                data = serializer.create(validated_data=validated_data)
+                rpt_serializer = self.serializer(data=validated_data)
+                rpt_serializer.is_valid(raise_exception=True)
+                rpt_serializer.save()
+                rpt = rpt_serializer.data
+                print('Line 105: ', rpt)
             # If Exist => Update
-            instance = ResetPasswordToken.objects.filter(user_id=user_serializer.data.get('id'))
+            instance = ResetPasswordToken.objects.filter(user_id=user_serializer.data.get('id')).first()
             validated_data = {
                 "key": get_token,
                 "ip_address": request.META.get(HTTP_IP_ADDRESS_HEADER,''),
                 "user_agent": request.META.get(HTTP_USER_AGENT_HEADER, '')
             }
-            data = serializer.update(instance=instance, validated_data=validated_data)
-            return Response({"status": status.HTTP_200_OK, "message": "Send OTP Successfully", "data": ""}, status=status.HTTP_200_OK)
+            rpt_serializer = self.serializer(data=validated_data)
+            rpt_serializer.is_valid(raise_exception=True)
+            rpt_serializer.save(instance=instance)
+            rpt = rpt_serializer.data
+            return Response({"status": status.HTTP_200_OK, "message": "Send OTP Successfully", "data": {rpt}}, status=status.HTTP_200_OK)
         except serializers.ValidationError as e:
             error_message = e.detail.get('email', [])[0]
             print(error_message)
