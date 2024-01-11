@@ -211,3 +211,13 @@ class Like(models.Model):
     post = models.ForeignKey(Post, on_delete=models.CASCADE)
     timestamp = models.DateTimeField(auto_now_add=True)
     
+class ResetPassword(models.Model):
+    created_at = models.DateTimeField(auto_now=True)
+    key = models.CharField()
+    ip_address = models.GenericIPAddressField()
+    user_agent = models.CharField()
+    # user_id = models.IntegerField()
+    user_id = models.ForeignKey(User, on_delete=models.CASCADE)
+    def save(self, *args, **kw):
+        self.created_at = datetime.time()
+        super().save(*args, **kw)

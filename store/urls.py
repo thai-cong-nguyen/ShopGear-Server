@@ -11,7 +11,7 @@ urlpatterns = [
     path('api/', crud.ApiRoot.as_view()),
     path('api/login', auth.LoginView.as_view(), name='login'),
     path('api/register', auth.RegistrationView.as_view(), name='register'),
-    path('api/password_reset', include('django_rest_passwordreset.urls', namespace='password_reset')),
+    path('api/password_reset', auth.ResetPasswordSendOTPView.as_view(), name='password_reset'),
     path('api/token', auth.ResetTokenView.as_view(), name='token'),
     path('', crud.ApiRoot.as_view(), name='api-root'),
     path('api/users/', crud.UserList.as_view(), name='user-list'),

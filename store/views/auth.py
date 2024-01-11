@@ -1,7 +1,10 @@
 from django.shortcuts import render
 from ..models import Category, User, Product, Order, OrderItem, Cart, CartItem, Transaction, Post
 
-from ..serializers import LoginSerializer, UserSerializer, RegistrationSerializer, ResetTokenSerializer
+from django.conf import settings
+from ..serializers import LoginSerializer, UserSerializer, RegistrationSerializer, ResetTokenSerializer, PasswordResetSerializer
+from ..utils.reset_password import sendResetPasswordEmail, get_token_generator
+from django_rest_passwordreset.models import ResetPasswordToken
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status, mixins, generics
@@ -13,6 +16,10 @@ from rest_framework.views import APIView
 from django.contrib.auth import authenticate
 from rest_framework import serializers 
 import json
+import datetime
+
+HTTP_USER_AGENT_HEADER = getattr(settings, 'DJANGO_REST_PASSWORDRESET_HTTP_USER_AGENT_HEADER', 'HTTP_USER_AGENT')
+HTTP_IP_ADDRESS_HEADER = getattr(settings, 'DJANGO_REST_PASSWORDRESET_IP_ADDRESS_HEADER', 'REMOTE_ADDR')
 
 class LoginView(APIView):
     def post(self, request):
@@ -68,3 +75,54 @@ class ResetTokenView(APIView):
             print(e)
             return Response({"status": status.HTTP_400_BAD_REQUEST, "message": str(e), "data": {}}, status=status.HTTP_400_BAD_REQUEST)
         
+class ResetPasswordSendOTPView(APIView):
+    serializer = PasswordResetSerializer
+    def post(self, request):
+        try:
+            serializer = self.serializer(data = request.data)
+            serializer.is_valid(raise_exception=True)
+            user = serializer.validated_data
+            user_serializer = UserSerializer(instance=user.get('email'))
+            get_token = get_token_generator()
+            reset_password = {
+                "key": get_token,
+                "username": user_serializer.data.get('username'),
+                "username": "username",
+                "email": "nguyenthaicong265@gmail.com",
+            }
+            print(ResetPasswordToken.objects.filter(user_id=user_serializer).exists())
+            sendResetPasswordEmail(reset_password)
+
+            # If not Exist => Create
+            if not ResetPasswordToken.objects.filter(user_id=user_serializer.data.get('id')).exists():
+                validated_data = {
+                    "key": get_token,
+                    "ip_address": request.META.get(HTTP_IP_ADDRESS_HEADER,''),
+                    "user_agent": request.META.get(HTTP_USER_AGENT_HEADER, ''),
+                    "user_id": user_serializer.data.get('id'),
+                }
+                data = serializer.create(validated_data=validated_data)
+            # If Exist => Update
+            instance = ResetPasswordToken.objects.filter(user_id=user_serializer.data.get('id'))
+            validated_data = {
+                "key": get_token,
+                "ip_address": request.META.get(HTTP_IP_ADDRESS_HEADER,''),
+                "user_agent": request.META.get(HTTP_USER_AGENT_HEADER, '')
+            }
+            data = serializer.update(instance=instance, validated_data=validated_data)
+            return Response({"status": status.HTTP_200_OK, "message": "Send OTP Successfully", "data": ""}, status=status.HTTP_200_OK)
+        except serializers.ValidationError as e:
+            error_message = e.detail.get('email', [])[0]
+            print(error_message)
+            return Response({"status": status.HTTP_400_BAD_REQUEST, "message": str(error_message), "data": {}}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            print(e)
+            return Response({"status": status.HTTP_400_BAD_REQUEST, "message": "Something Went Wrong", "data": {}}, status=status.HTTP_400_BAD_REQUEST)
+            
+class ResetPasswordConfirmationView(APIView):
+    def post(self, request, *args, **kwargs):
+        try:
+            print("Reset Password Confirmation")
+        except Exception as e:
+            print(e)
+            return Response({"status": status.HTTP_400_BAD_REQUEST, "message": str(e), "data": {}}, status=status.HTTP_400_BAD_REQUEST)
