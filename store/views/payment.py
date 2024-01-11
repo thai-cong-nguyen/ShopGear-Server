@@ -37,8 +37,8 @@ class CreateOrderView(APIView):
                     "full_name": data.get("full_name"),
                     "items": data.get("items")
                 }
+                print(orderdata)
                 serializer = OrderSerializer(data=orderdata)
-
                 serializer.is_valid(raise_exception=True)
                 createOrder = serializer.create(validated_data=serializer.validated_data)
                 
