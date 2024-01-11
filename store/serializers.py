@@ -136,7 +136,17 @@ class ProductSerializer(serializers.ModelSerializer):
         validated_data['name_without_accent'] = slugify(validated_data['name']).replace('-', ' ')
         return super().update(instance, validated_data)
     
-
+class PostReviewSerializer(serializers.ModelSerializer):
+    description = serializers.CharField(required=False)
+    likes = serializers.ManyRelatedField(required=False, child_relation=serializers.PrimaryKeyRelatedField(queryset=User.objects.all()))
+    class Meta:
+        model = Post
+        fields = '__all__'
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        representation['user'] = UserSerializer(instance=instance.user).data
+        return representation
+    
 class PostSerializer(serializers.ModelSerializer):
     product = ProductSerializer()
     zone = serializers.CharField(source='get_zone_display')

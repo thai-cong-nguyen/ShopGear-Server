@@ -43,4 +43,5 @@ urlpatterns = [
     # path('api/order-items/<int:buyer>', crud.OrderItemListView.as_view(), name='order-items'),
     path('api/buyer/orders/<int:pk>', crud.OrderUser.as_view(), name='order-user'),
     path('api/seller/orders/<int:seller>', crud.OrderItemView.as_view(), name='order-seller'),
+    path('api/review/posts/<int:pk>', crud.PostReviewView.as_view(), name='review-post'),
 ]
