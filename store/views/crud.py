@@ -2,7 +2,7 @@ from multiprocessing import Value
 from django.shortcuts import render
 from ..models import Category, Status, User, Product, Order, OrderItem, Cart, CartItem, Transaction, Post, Field, FieldValue, FieldOption, Attachment
 
-from ..serializers import  PostReviewSerializer, UserSerializer, CategorySerializer, ProductSerializer, OrderSerializer, OrderItemSerializer, CartSerializer, CartItemSerializer, TransactionSerializer, PostSerializer, FieldSerializer, PostAndProductSerializer, FieldValueSerializer, FieldOptionSerializer, AttachmentSerializer
+from ..serializers import  PostReviewSerializer, UserSerializer, CategorySerializer, ProductSerializer, OrderSerializer, OrderItemSerializer, CartSerializer, CartItemSerializer, TransactionSerializer, PostSerializer, FieldSerializer, PostAndProductSerializer, FieldValueSerializer, FieldOptionSerializer, AttachmentSerializer, UserUpdateSerializer
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status, mixins, generics, viewsets, serializers
@@ -177,6 +177,11 @@ class UserList(generics.ListCreateAPIView):
 class UserDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = User.objects.all()
     serializer_class = UserSerializer
+    def get_serializer_class(self):
+        # Use the update serializer for PUT requests
+        if self.request.method == 'PUT':
+            return UserUpdateSerializer
+        return self.serializer_class
 
 class FieldValueList(generics.ListCreateAPIView):
     queryset = FieldValue.objects.all()

@@ -17,6 +17,11 @@ class UserSerializer(serializers.ModelSerializer):
         model = User
         fields = ['id', 'username', 'first_name',
                   'last_name', 'is_admin', 'products', 'posts', 'phone', 'email']
+class UserUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['is_admin']
+        
 class UsernameSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
@@ -369,6 +374,7 @@ class OrderSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         items_data = validated_data['items']
         data_without_items = {key: value for key, value in validated_data.items() if key != 'items'}
+        print('Line 377: ',data_without_items)
         order = Order.objects.create(**data_without_items)
         for item_data in items_data:
             product = item_data['product']
